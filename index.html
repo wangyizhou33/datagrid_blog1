@@ -1,0 +1,660 @@
+<!doctype html>
+<html lang="zh-CN" id="top">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="从第一人称观测设备、时空标定与几何验证，到虚拟相机和规模化数据生产。">
+  <title>从物理传感器到标准化视觉观测 · 原力无限</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./site.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#article">跳到正文</a>
+  <header class="site-header">
+    <div class="bar">
+      <a class="brand" href="#top">原力无限</a>
+      <nav aria-label="快捷导航">
+        <a href="#devices">设备</a>
+        <a href="#rig-demo">Rig Viewer</a>
+        <a href="#pose-demo">定位回放</a>
+        <a href="#toc">目录</a>
+      </nav>
+    </div>
+    <div class="reading-progress" aria-hidden="true"></div>
+  </header>
+  <main>
+    <section class="hero" aria-labelledby="title">
+      <div class="hero-inner">
+        <p class="eyebrow">具身智能数据工程</p>
+        <h1 id="title"><span>从物理传感器</span><span>到标准化视觉观测</span></h1>
+        <p class="hero-deck">第一人称具身数据的工程体系</p>
+        <figure><img width="3064" height="800" decoding="async" src="./assets/real_capture_scenes_5x1.jpg" alt="工厂作业与商超物品取放的五张真实采集照片，一行五列" /><figcaption>图 1｜真实采集场景。左侧三张为工厂作业，右侧两张为商超物品取放；采集人员佩戴设备完成实际操作。</figcaption></figure>
+      </div>
+    </section>
+    <div class="layout">
+      <nav class="toc" id="toc" aria-label="文章目录">
+        <p class="toc-label">本文目录</p>
+        <ul>
+          <li><a href="#observation">第一人称数据</a></li>
+          <li><a href="#devices">设备产能</a></li>
+          <li><a href="#calibration">时空标定</a></li>
+          <li><a href="#validation">几何验证</a></li>
+          <li><a href="#virtual-camera">虚拟相机</a></li>
+          <li><a href="#quality">规模化生产</a></li>
+        </ul>
+      </nav>
+      <article id="article" aria-labelledby="title">
+<p class="intro">具身智能要从数据里学的，除了画面中有什么，还有人在什么位置、怎样接近物体、何时接触、如何完成操作。第一人称数据把环境、身体运动和操作过程记录在同一条时间线上，模型可以从连续示范中学习任务上下文和动作结果。这些数据要用于训练、复现和评估，每一帧都需要可信的时间与空间定义。</p>
+<p>真实采集覆盖工厂作业、商超物品取放等场景（图 1）。下文以酒店客房整理为例说明观测要求：桌面上有水杯、托盘、遥控器、纸巾和包装垃圾。采集人员俯身把水杯放回托盘，同时拾起纸巾，再把垃圾移到桌边的垃圾桶。人做起来很自然，采集系统却要同时应对头部转动、双手协同、近距离接触、透明物体和不断变化的遮挡。</p>
+
+<p>下面从这段操作出发，说明第一人称视觉数据录下来之后，还要做哪些工作才能被使用、检验和追溯。本文先分析任务对观测的要求，再介绍已适配的头环与腕部设备，并结合样例标定建立空间与时间约定。全文只讨论视觉与视觉惯性观测，手部姿态估计和人到机器人的动作映射不在本文范围内。</p>
+<h2 id="observation">01 为什么第一人称数据需要工程设计</h2>
+<p>头部视角能看到桌面、托盘和垃圾桶之间的整体关系，腕部视角离手与物体的接触位置更近。两者互相补充，但都有看不全的时候：转头时水杯可能离开头环中央视野；抓杯时手指遮住杯口；手腕翻转后，腕部相机可能只看见桌面一角。</p>
+<figure><img loading="lazy" width="1672" height="941" decoding="async" src="./assets/hotel_annotated_R7.svg" alt="手部、物体、遮挡和相机视野标注" /><figcaption>图 2｜同一场景中的手部、物体、局部遮挡与头腕视野。彩色区域只用于说明观测关系，不是从照片反求的相机参数，也不代表精确 FOV。</figcaption></figure>
+<div class="table-scroll" role="region" aria-label="数据表格" tabindex="0"><table>
+<thead>
+<tr>
+<th>场景中的变化</th>
+<th>数据面临的问题</th>
+<th>对应的工程要求</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>俯身找物、转头观察</td>
+<td>运动模糊、目标离开视野</td>
+<td>关注曝光与成像模式，验证覆盖和连续跟踪</td>
+</tr>
+<tr>
+<td>水杯放回托盘</td>
+<td>透明材质、反光、接触边界不清</td>
+<td>保留原始图与无效标记，分区域评估深度</td>
+</tr>
+<tr>
+<td>纸巾被抓起</td>
+<td>手物遮挡、细节与形变</td>
+<td>组合头腕视角，统计操作区实际可见性</td>
+</tr>
+<tr>
+<td>垃圾移向桶口</td>
+<td>多设备相对运动、帧间时差</td>
+<td>软同步配对，保留时间差与动态相对位姿</td>
+</tr>
+</tbody>
+</table></div>
+<p>所以采集方案要围绕任务来设计，回答这几个问题：镜头是否覆盖操作区，近场物体是否有足够细节，设备是否妨碍动作，时间偏差是否会破坏跨视角对应。多装相机只是增加潜在观测，实际可用的覆盖还取决于佩戴、遮挡、曝光、同步和几何处理。</p>
+<p>我们把具身智能的数据壁垒归为三项：设备产能支撑持续采集，真值产线把观测转化为可用于训练的真值，场景产能提供任务与环境的覆盖。data scaling 需要三者同时到位，数据规模增长时，质量和场景覆盖才跟得上。</p>
+<figure><img loading="lazy" width="2736" height="832" decoding="async" src="./assets/three_keys.png" alt="数据壁垒的三要素" /></figure>
+<p>本文讨论设备产能，即我们已支持的头环与腕部观测设备，以及配套的标定、同步和数据处理。它们给后续真值产线提供时空关系明确的观测输入；随数据保存的标定与元数据，则建立起数据、设备和传感器参数之间的血缘关系。</p>
+<figure><img loading="lazy" width="2300" height="1074" decoding="async" src="./assets/four_components.png" alt="设备产能的四个组成部分" /></figure>
+<h2 id="devices">星河数采无本体设备产能</h2>
+<figure><img loading="lazy" width="3600" height="850" decoding="async" src="./assets/products_headsets_side.jpg" alt="Ego-Air、Ego-Mate-Duo 与 Ego-Mate-Ultra 头环设备侧面外观示例" /><figcaption>图 3｜从左至右为 Ego-Air、Ego-Mate-Duo、Ego-Mate-Ultra，非等比例展示。Ultra 图片做了水平镜像以统一朝向，不能据此判断实际左右结构或传感器位置。</figcaption></figure>
+<figure><img loading="lazy" width="2100" height="960" decoding="async" src="./assets/products_nearfield.jpg" alt="Mate系列腕部近场设备外观示例" /><figcaption>图 4｜Ego-Mate-Wristcam 与 Ego-Mate-Finger。两者的佩戴方式与操作形式不同，应按任务选择。</figcaption></figure>
+<p>我们已支持三款头环和两款腕部观测设备。头环记录场景上下文，腕部设备补充近场手物交互。选型要同时考虑任务覆盖、成像质量和佩戴负担。</p>
+<h3 id="section-2-1-头环观测设备">2.1 头环观测设备</h3>
+<div class="table-scroll wide" role="region" aria-label="数据表格" tabindex="0"><table>
+<thead>
+<tr>
+<th>候选传感器／模组</th>
+<th>分辨率与帧率模式</th>
+<th>快门与读出</th>
+<th>镜头／有效 FOV</th>
+<th>同步能力</th>
+<th>系统约束</th>
+<th>选用或排除原因</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ego-Air；4 路灰度鱼眼＋RGB 双目，共 6 路相机</td>
+<td>灰度各 640×480、30 fps；RGB 各 1600×1200、60 fps</td>
+<td>全局快门</td>
+<td>鱼眼对角 ≥160°；RGB H159°／V95°</td>
+<td>相机组硬同步，见 3.2</td>
+<td>IMU 500 Hz；USB 3.0、Wi-Fi 6；最大功耗 4 W</td>
+<td>更多灰度相机辅助空间定位；板载算力充足，可在线运行定位与手部出画检测</td>
+</tr>
+<tr>
+<td>Ego-Mate-Duo；双目鱼眼，标称基线 120 mm</td>
+<td>1600×1200、30 fps</td>
+<td>全局快门</td>
+<td>单路 H165°／V130°</td>
+<td>硬同步，见 3.2</td>
+<td>IMU 400／1000 Hz；约 250 g、&lt;2 W；USB 2.0、TF 卡</td>
+<td>三款头环中单价最低，性价比高</td>
+</tr>
+<tr>
+<td>Ego-Mate-Ultra；前向双目＋侧向相机，前向基线 100 mm</td>
+<td>1600×1200、30／60 fps</td>
+<td>全局快门</td>
+<td>此模式单路 H165°／V130°；标称拼接 H281°</td>
+<td>四目硬同步，见 3.2</td>
+<td>IMU 400／800／1000 Hz；相机 &lt;420 g、&lt;6 W；USB 3.0、主动散热</td>
+<td>RGB 组合视场大，与腕部图像的视场重叠范围更大，有利于腕部定位</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="section-2-2-腕部观测设备">2.2 腕部观测设备</h3>
+<div class="table-scroll wide" role="region" aria-label="数据表格" tabindex="0"><table>
+<thead>
+<tr>
+<th>候选传感器／模组</th>
+<th>分辨率与帧率模式</th>
+<th>快门与读出</th>
+<th>镜头／有效 FOV</th>
+<th>同步能力</th>
+<th>系统约束</th>
+<th>选用或排除原因</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ego-Mate-Wristcam；每侧独立单目鱼眼</td>
+<td>1600×1200、30／60 fps</td>
+<td>全局快门</td>
+<td>H165°／V130°</td>
+<td>单目；跨设备软同步，见 3.2</td>
+<td>IMU 400／1000 Hz；单设备约 75 g、&lt;2 W；USB 2.0、TF 卡</td>
+<td>轻量腕戴，补充自然徒手操作的近场观测</td>
+</tr>
+<tr>
+<td>Ego-Mate-Finger；RGB＋Mono 双目，基线 50 mm，带夹持机构</td>
+<td>RGB 1600×1200；Mono 各 1280×960；30／60 fps</td>
+<td>全局快门</td>
+<td>RGB H165°／V128°；Mono H137°／V100°</td>
+<td>设备内相机硬同步，见 3.2</td>
+<td>IMU 400／800／1600 Hz；单设备约 320 g、典型 &lt;3 W；TF 卡</td>
+<td>手持／夹持任务中的彩色与双目几何观测</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="section-2-3-围绕任务选择设备组合">2.3 围绕任务选择设备组合</h3>
+<p>头环可以按在线处理需求、部署成本和跨设备共同视野来选，再通过试采，结合操作距离、遮挡和跟踪连续性，检查所选设备能否覆盖关键动作。</p>
+<p>自然徒手示范可以用轻量的 Wristcam。允许夹持工具、需要近场双目观测的任务可以评估 Finger，但要考虑它的重量和夹持机构对动作的影响。头环与腕部各自独立运动，两者的关联要靠共同视野、时间对齐和后续定位来建立。</p>
+<p>验收时还要在实际室内光照和动作速度下检查细节、模糊、噪声和过曝。全局快门消除不了曝光期间的运动模糊；分辨率和帧率越高，带宽、存储、功耗与散热的负担也越重。选定的组合要能持续覆盖关键操作，同时尽量少干扰采集人员的动作。</p>
+<h2 id="calibration">03 建立可信的空间与时间坐标</h2>
+<p>头环看见水杯、腕部看见抓握位置，这两张图还不能直接合在一起用。要先回答几个问题：每个像素对应哪一条空间射线，两个画面记录的是不是同一次接触，相机位姿是相对头环、腕部还是共同地图表达的。投影模型、坐标变换和时间语义都定义清楚之后，多路视频才能用于计算。</p>
+<p>本章使用四组现有样例：Ego-Air、Ego-Mate-Duo＋双侧 Wristcam、Ego-Mate-Duo＋双侧 Finger，以及 Ego-Mate-Ultra。文中分开写三类内容：标定文件里已有的参数，由这些参数算出的结果，以及投产前还要验证的条件。有标定文件，不代表已经通过精度验收。</p>
+<h3 id="section-3-1-相机模型-内参与外参">3.1 相机模型、内参与外参</h3>
+<h4 id="section-3-1-1-常用模型及其选用依据">3.1.1 常用模型及其选用依据</h4>
+<p>工程上常把非线性成像统称为“畸变”，其实它包括两类：针孔投影之后的径向／切向修正，以及直接改变投影几何的鱼眼模型。一个相机模型要同时定义三维点到像素的投影 <code>π()</code> 和像素到单位视线的反投影 <code>π⁻¹()</code>；FOV 计算、极线校正和 VIO／SLAM 都要用到反投影。</p>
+<p>设相机坐标中的三维点为 <span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>P</mi><mi>C</mi></msub><mo>=</mo><mo stretchy="false">(</mo><mi>X</mi><mo separator="true">,</mo><mi>Y</mi><mo separator="true">,</mo><mi>Z</mi><msup><mo stretchy="false">)</mo><mi mathvariant="normal">⊤</mi></msup></mrow><annotation encoding="application/x-tex">P_C=(X,Y,Z)^\top</annotation></semantics></math></span>，各模型先得到像面坐标 <span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false">(</mo><msub><mi>x</mi><mi>m</mi></msub><mo separator="true">,</mo><msub><mi>y</mi><mi>m</mi></msub><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">(x_m,y_m)</annotation></semantics></math></span>，再转换为像素：</p>
+<div class="equation"><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi>u</mi><mo>=</mo><msub><mi>f</mi><mi>x</mi></msub><msub><mi>x</mi><mi>m</mi></msub><mo>+</mo><msub><mi>c</mi><mi>x</mi></msub><mo separator="true">,</mo><mspace width="2em"/><mi>v</mi><mo>=</mo><msub><mi>f</mi><mi>y</mi></msub><msub><mi>y</mi><mi>m</mi></msub><mo>+</mo><msub><mi>c</mi><mi>y</mi></msub><mi mathvariant="normal">.</mi></mrow><annotation encoding="application/x-tex">u=f_x x_m+c_x,\qquad v=f_y y_m+c_y.</annotation></semantics></math></span></div>
+<p>其中 <span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>f</mi><mi>x</mi></msub><mo separator="true">,</mo><msub><mi>f</mi><mi>y</mi></msub></mrow><annotation encoding="application/x-tex">f_x,f_y</annotation></semantics></math></span> 为像素单位焦距，<span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>c</mi><mi>x</mi></msub><mo separator="true">,</mo><msub><mi>c</mi><mi>y</mi></msub></mrow><annotation encoding="application/x-tex">c_x,c_y</annotation></semantics></math></span> 为主点；以下省略 skew（像素轴倾斜）项。针孔、Brown 和表内 OpenCV fisheye 写法使用 <span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Z</mi><mo>&gt;</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">Z&gt;0</annotation></semantics></math></span>，记 <span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>x</mi><mo>=</mo><mi>X</mi><mi mathvariant="normal">/</mi><mi>Z</mi></mrow><annotation encoding="application/x-tex">x=X/Z</annotation></semantics></math></span>、<span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>y</mi><mo>=</mo><mi>Y</mi><mi mathvariant="normal">/</mi><mi>Z</mi></mrow><annotation encoding="application/x-tex">y=Y/Z</annotation></semantics></math></span>、<span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>r</mi><mn>2</mn></msup><mo>=</mo><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><msup><mi>y</mi><mn>2</mn></msup></mrow><annotation encoding="application/x-tex">r^2=x^2+y^2</annotation></semantics></math></span>。</p>
+<div class="table-scroll wide" role="region" aria-label="数据表格" tabindex="0"><table>
+<thead>
+<tr>
+<th>模型</th>
+<th>投影／畸变公式与参数</th>
+<th>适用场景</th>
+<th>选用依据与注意事项</th>
+<th>OpenCV 4.x API（Python）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://docs.opencv.org/4.13.0/d9/d0c/group__calib3d.html">理想针孔 Pinhole</a></td>
+<td><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>x</mi><mi>m</mi></msub><mo>=</mo><mi>X</mi><mi mathvariant="normal">/</mi><mi>Z</mi><mo separator="true">,</mo><mspace width="1em"/><msub><mi>y</mi><mi>m</mi></msub><mo>=</mo><mi>Y</mi><mi mathvariant="normal">/</mi><mi>Z</mi></mrow><annotation encoding="application/x-tex">x_m=X/Z,\quad y_m=Y/Z</annotation></semantics></math></span>。<br>仅有 <span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>f</mi><mi>x</mi></msub><mo separator="true">,</mo><msub><mi>f</mi><mi>y</mi></msub><mo separator="true">,</mo><msub><mi>c</mi><mi>x</mi></msub><mo separator="true">,</mo><msub><mi>c</mi><mi>y</mi></msub></mrow><annotation encoding="application/x-tex">f_x,f_y,c_x,c_y</annotation></semantics></math></span>，无畸变参数。</td>
+<td>畸变可忽略的成像，或已去畸变／校正的虚拟相机</td>
+<td>接口简单，但不能直接代替原始鱼眼模型；校正图必须关联新内参、输出尺寸和有效区域</td>
+<td><code>cv2.projectPoints</code>，<code>distCoeffs=None</code> 或全零</td>
+</tr>
+<tr>
+<td><a href="https://docs.opencv.org/4.13.0/d9/d0c/group__calib3d.html">Radtan／Brown–Conrady</a></td>
+<td><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>g</mi><mo stretchy="false">(</mo><mi>r</mi><mo stretchy="false">)</mo><mo>=</mo><mn>1</mn><mo>+</mo><msub><mi>k</mi><mn>1</mn></msub><msup><mi>r</mi><mn>2</mn></msup><mo>+</mo><msub><mi>k</mi><mn>2</mn></msub><msup><mi>r</mi><mn>4</mn></msup><mo>+</mo><msub><mi>k</mi><mn>3</mn></msub><msup><mi>r</mi><mn>6</mn></msup></mrow><annotation encoding="application/x-tex">g(r)=1+k_1r^2+k_2r^4+k_3r^6</annotation></semantics></math></span>。<br><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>x</mi><mi>m</mi></msub><mo>=</mo><mi>x</mi><mi>g</mi><mo stretchy="false">(</mo><mi>r</mi><mo stretchy="false">)</mo><mo>+</mo><mn>2</mn><msub><mi>p</mi><mn>1</mn></msub><mi>x</mi><mi>y</mi><mo>+</mo><msub><mi>p</mi><mn>2</mn></msub><mo stretchy="false">(</mo><msup><mi>r</mi><mn>2</mn></msup><mo>+</mo><mn>2</mn><msup><mi>x</mi><mn>2</mn></msup><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">x_m=xg(r)+2p_1xy+p_2(r^2+2x^2)</annotation></semantics></math></span>。<br><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>y</mi><mi>m</mi></msub><mo>=</mo><mi>y</mi><mi>g</mi><mo stretchy="false">(</mo><mi>r</mi><mo stretchy="false">)</mo><mo>+</mo><msub><mi>p</mi><mn>1</mn></msub><mo stretchy="false">(</mo><msup><mi>r</mi><mn>2</mn></msup><mo>+</mo><mn>2</mn><msup><mi>y</mi><mn>2</mn></msup><mo stretchy="false">)</mo><mo>+</mo><mn>2</mn><msub><mi>p</mi><mn>2</mn></msub><mi>x</mi><mi>y</mi></mrow><annotation encoding="application/x-tex">y_m=yg(r)+p_1(r^2+2y^2)+2p_2xy</annotation></semantics></math></span>。<br><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>k</mi><mi>i</mi></msub></mrow><annotation encoding="application/x-tex">k_i</annotation></semantics></math></span> 控制径向畸变，<span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>p</mi><mn>1</mn></msub><mo separator="true">,</mo><msub><mi>p</mi><mn>2</mn></msub></mrow><annotation encoding="application/x-tex">p_1,p_2</annotation></semantics></math></span> 控制切向畸变；五参数顺序为 <span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>D</mi><mo>=</mo><mo stretchy="false">(</mo><msub><mi>k</mi><mn>1</mn></msub><mo separator="true">,</mo><msub><mi>k</mi><mn>2</mn></msub><mo separator="true">,</mo><msub><mi>p</mi><mn>1</mn></msub><mo separator="true">,</mo><msub><mi>p</mi><mn>2</mn></msub><mo separator="true">,</mo><msub><mi>k</mi><mn>3</mn></msub><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">D=(k_1,k_2,p_1,p_2,k_3)</annotation></semantics></math></span>。</td>
+<td>常规镜头、中等广角、工业视觉及依赖成熟针孔接口的双目链路</td>
+<td>工具支持广；超广角边缘可能拟合不稳。四参数、五参数和八参数有理式是不同配置，系数不能随意截断</td>
+<td><code>cv2.calibrateCamera</code>；<code>cv2.projectPoints</code>；<code>cv2.undistortPoints</code>；<code>cv2.initUndistortRectifyMap</code></td>
+</tr>
+<tr>
+<td><a href="https://docs.opencv.org/4.13.0/db/d58/group__calib3d__fisheye.html">Equidistant／Kannala–Brandt（常见 KB4）</a></td>
+<td><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>θ</mi><mo>=</mo><mi>arctan</mi><mo>⁡</mo><mi>r</mi></mrow><annotation encoding="application/x-tex">\theta=\arctan r</annotation></semantics></math></span>。<br><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>θ</mi><mi>d</mi></msub><mo>=</mo><mi>θ</mi><mo stretchy="false">(</mo><mn>1</mn><mo>+</mo><msub><mi>k</mi><mn>1</mn></msub><msup><mi>θ</mi><mn>2</mn></msup><mo>+</mo><msub><mi>k</mi><mn>2</mn></msub><msup><mi>θ</mi><mn>4</mn></msup><mo>+</mo><msub><mi>k</mi><mn>3</mn></msub><msup><mi>θ</mi><mn>6</mn></msup><mo>+</mo><msub><mi>k</mi><mn>4</mn></msub><msup><mi>θ</mi><mn>8</mn></msup><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">\theta_d=\theta(1+k_1\theta^2+k_2\theta^4+k_3\theta^6+k_4\theta^8)</annotation></semantics></math></span>。<br><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>x</mi><mi>m</mi></msub><mo>=</mo><mo stretchy="false">(</mo><msub><mi>θ</mi><mi>d</mi></msub><mi mathvariant="normal">/</mi><mi>r</mi><mo stretchy="false">)</mo><mi>x</mi><mo separator="true">,</mo><mspace width="1em"/><msub><mi>y</mi><mi>m</mi></msub><mo>=</mo><mo stretchy="false">(</mo><msub><mi>θ</mi><mi>d</mi></msub><mi mathvariant="normal">/</mi><mi>r</mi><mo stretchy="false">)</mo><mi>y</mi></mrow><annotation encoding="application/x-tex">x_m=(\theta_d/r)x,\quad y_m=(\theta_d/r)y</annotation></semantics></math></span>。<br><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>k</mi><mn>1</mn></msub><mo>…</mo><msub><mi>k</mi><mn>4</mn></msub></mrow><annotation encoding="application/x-tex">k_1\ldots k_4</annotation></semantics></math></span> 修正入射角到像面半径的关系；全零时为理想等距投影，仍不是针孔投影。</td>
+<td>鱼眼相机、环视、机器人 VIO／SLAM</td>
+<td>适合强径向非线性；反投影通常需要数值求逆，要检查多项式单调区间和库的有效域；KB、fisheye 标签相同，实现未必相同</td>
+<td><code>cv2.fisheye.calibrate</code>；<code>cv2.fisheye.projectPoints</code>；<code>cv2.fisheye.undistortPoints</code>；<code>cv2.fisheye.initUndistortRectifyMap</code></td>
+</tr>
+<tr>
+<td><a href="https://docs.opencv.org/4.13.0/d3/ddc/group__ccalib.html">Mei 全向模型（UCM＋Radtan）</a></td>
+<td><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mo>=</mo><msqrt><mrow><msup><mi>X</mi><mn>2</mn></msup><mo>+</mo><msup><mi>Y</mi><mn>2</mn></msup><mo>+</mo><msup><mi>Z</mi><mn>2</mn></msup></mrow></msqrt></mrow><annotation encoding="application/x-tex">d=\sqrt{X^2+Y^2+Z^2}</annotation></semantics></math></span>。<br><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>a</mi><mo>=</mo><mi>X</mi><mi mathvariant="normal">/</mi><mo stretchy="false">(</mo><mi>Z</mi><mo>+</mo><mi>ξ</mi><mi>d</mi><mo stretchy="false">)</mo><mo separator="true">,</mo><mspace width="1em"/><mi>b</mi><mo>=</mo><mi>Y</mi><mi mathvariant="normal">/</mi><mo stretchy="false">(</mo><mi>Z</mi><mo>+</mo><mi>ξ</mi><mi>d</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">a=X/(Z+\xi d),\quad b=Y/(Z+\xi d)</annotation></semantics></math></span>。<br><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>ρ</mi><mn>2</mn></msup><mo>=</mo><msup><mi>a</mi><mn>2</mn></msup><mo>+</mo><msup><mi>b</mi><mn>2</mn></msup><mo separator="true">,</mo><mspace width="1em"/><mi>g</mi><mo>=</mo><mn>1</mn><mo>+</mo><msub><mi>k</mi><mn>1</mn></msub><msup><mi>ρ</mi><mn>2</mn></msup><mo>+</mo><msub><mi>k</mi><mn>2</mn></msub><msup><mi>ρ</mi><mn>4</mn></msup></mrow><annotation encoding="application/x-tex">\rho^2=a^2+b^2,\quad g=1+k_1\rho^2+k_2\rho^4</annotation></semantics></math></span>。<br><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>x</mi><mi>m</mi></msub><mo>=</mo><mi>a</mi><mi>g</mi><mo>+</mo><mn>2</mn><msub><mi>p</mi><mn>1</mn></msub><mi>a</mi><mi>b</mi><mo>+</mo><msub><mi>p</mi><mn>2</mn></msub><mo stretchy="false">(</mo><msup><mi>ρ</mi><mn>2</mn></msup><mo>+</mo><mn>2</mn><msup><mi>a</mi><mn>2</mn></msup><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">x_m=ag+2p_1ab+p_2(\rho^2+2a^2)</annotation></semantics></math></span>。<br><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>y</mi><mi>m</mi></msub><mo>=</mo><mi>b</mi><mi>g</mi><mo>+</mo><msub><mi>p</mi><mn>1</mn></msub><mo stretchy="false">(</mo><msup><mi>ρ</mi><mn>2</mn></msup><mo>+</mo><mn>2</mn><msup><mi>b</mi><mn>2</mn></msup><mo stretchy="false">)</mo><mo>+</mo><mn>2</mn><msub><mi>p</mi><mn>2</mn></msub><mi>a</mi><mi>b</mi></mrow><annotation encoding="application/x-tex">y_m=bg+p_1(\rho^2+2b^2)+2p_2ab</annotation></semantics></math></span>。<br><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ξ</mi></mrow><annotation encoding="application/x-tex">\xi</annotation></semantics></math></span> 控制球面投影的偏移；其后施加径向／切向修正，<span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>D</mi><mo>=</mo><mo stretchy="false">(</mo><msub><mi>k</mi><mn>1</mn></msub><mo separator="true">,</mo><msub><mi>k</mi><mn>2</mn></msub><mo separator="true">,</mo><msub><mi>p</mi><mn>1</mn></msub><mo separator="true">,</mo><msub><mi>p</mi><mn>2</mn></msub><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">D=(k_1,k_2,p_1,p_2)</annotation></semantics></math></span>，与 <span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ξ</mi></mrow><annotation encoding="application/x-tex">\xi</annotation></semantics></math></span> 分开传入。</td>
+<td>单视点全向、折反射与大视场鱼眼相机</td>
+<td>在 UCM 投影后补充径向／切向畸变；需检查有效域。接口位于 OpenCV contrib 的 <code>ccalib</code> 模块，参数不能直接作为 EUCM 或 DS 使用</td>
+<td><code>cv2.omnidir.calibrate</code>；<code>cv2.omnidir.projectPoints</code>；<code>cv2.omnidir.undistortPoints</code>；<code>cv2.omnidir.initUndistortRectifyMap</code></td>
+</tr>
+<tr>
+<td><a href="https://cvg.cit.tum.de/_media/spezial/bib/usenko18double-sphere.pdf">EUCM</a></td>
+<td><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mo>=</mo><msqrt><mrow><mi>β</mi><mo stretchy="false">(</mo><msup><mi>X</mi><mn>2</mn></msup><mo>+</mo><msup><mi>Y</mi><mn>2</mn></msup><mo stretchy="false">)</mo><mo>+</mo><msup><mi>Z</mi><mn>2</mn></msup></mrow></msqrt></mrow><annotation encoding="application/x-tex">d=\sqrt{\beta(X^2+Y^2)+Z^2}</annotation></semantics></math></span>。<br><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>q</mi><mo>=</mo><mi>α</mi><mi>d</mi><mo>+</mo><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mi>α</mi><mo stretchy="false">)</mo><mi>Z</mi></mrow><annotation encoding="application/x-tex">q=\alpha d+(1-\alpha)Z</annotation></semantics></math></span>。<br><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>x</mi><mi>m</mi></msub><mo>=</mo><mi>X</mi><mi mathvariant="normal">/</mi><mi>q</mi><mo separator="true">,</mo><mspace width="1em"/><msub><mi>y</mi><mi>m</mi></msub><mo>=</mo><mi>Y</mi><mi mathvariant="normal">/</mi><mi>q</mi></mrow><annotation encoding="application/x-tex">x_m=X/q,\quad y_m=Y/q</annotation></semantics></math></span>。<br><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>∈</mo><mo stretchy="false">[</mo><mn>0</mn><mo separator="true">,</mo><mn>1</mn><mo stretchy="false">]</mo></mrow><annotation encoding="application/x-tex">\alpha\in[0,1]</annotation></semantics></math></span> 控制分母两项的混合，<span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>β</mi><mo>&gt;</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\beta&gt;0</annotation></semantics></math></span> 控制横向平方项的权重；额外参数为 <span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false">(</mo><mi>α</mi><mo separator="true">,</mo><mi>β</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">(\alpha,\beta)</annotation></semantics></math></span>。</td>
+<td>大视场机器人视觉、需要高频像素—射线转换的定位系统</td>
+<td>参数紧凑、反投影有闭式形式；要检查参数及根号的定义域，明显非对称的畸变仍可能残留</td>
+<td><code>calib3d</code>／<code>ccalib</code> 无直接对应的标准模型 API；需实现投影／反投影，再用 <code>cv2.remap</code> 重采样</td>
+</tr>
+<tr>
+<td><a href="https://cvg.cit.tum.de/_media/spezial/bib/usenko18double-sphere.pdf">Double Sphere（DS）</a></td>
+<td><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>d</mi><mn>1</mn></msub><mo>=</mo><msqrt><mrow><msup><mi>X</mi><mn>2</mn></msup><mo>+</mo><msup><mi>Y</mi><mn>2</mn></msup><mo>+</mo><msup><mi>Z</mi><mn>2</mn></msup></mrow></msqrt><mo separator="true">,</mo><mspace width="1em"/><msub><mi>z</mi><mn>1</mn></msub><mo>=</mo><mi>ξ</mi><msub><mi>d</mi><mn>1</mn></msub><mo>+</mo><mi>Z</mi></mrow><annotation encoding="application/x-tex">d_1=\sqrt{X^2+Y^2+Z^2},\quad z_1=\xi d_1+Z</annotation></semantics></math></span>。<br><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>d</mi><mn>2</mn></msub><mo>=</mo><msqrt><mrow><msup><mi>X</mi><mn>2</mn></msup><mo>+</mo><msup><mi>Y</mi><mn>2</mn></msup><mo>+</mo><msubsup><mi>z</mi><mn>1</mn><mn>2</mn></msubsup></mrow></msqrt></mrow><annotation encoding="application/x-tex">d_2=\sqrt{X^2+Y^2+z_1^2}</annotation></semantics></math></span>。<br><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>q</mi><mo>=</mo><mi>α</mi><msub><mi>d</mi><mn>2</mn></msub><mo>+</mo><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mi>α</mi><mo stretchy="false">)</mo><msub><mi>z</mi><mn>1</mn></msub></mrow><annotation encoding="application/x-tex">q=\alpha d_2+(1-\alpha)z_1</annotation></semantics></math></span>。<br><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>x</mi><mi>m</mi></msub><mo>=</mo><mi>X</mi><mi mathvariant="normal">/</mi><mi>q</mi><mo separator="true">,</mo><mspace width="1em"/><msub><mi>y</mi><mi>m</mi></msub><mo>=</mo><mi>Y</mi><mi mathvariant="normal">/</mi><mi>q</mi></mrow><annotation encoding="application/x-tex">x_m=X/q,\quad y_m=Y/q</annotation></semantics></math></span>。<br><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ξ</mi></mrow><annotation encoding="application/x-tex">\xi</annotation></semantics></math></span> 控制球心的相对偏移，<span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>∈</mo><mo stretchy="false">[</mo><mn>0</mn><mo separator="true">,</mo><mn>1</mn><mo stretchy="false">]</mo></mrow><annotation encoding="application/x-tex">\alpha\in[0,1]</annotation></semantics></math></span> 控制投影分母的混合；额外参数为 <span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false">(</mo><mi>ξ</mi><mo separator="true">,</mo><mi>α</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">(\xi,\alpha)</annotation></semantics></math></span>。</td>
+<td>超广角、多鱼眼 VIO／SLAM</td>
+<td>投影与闭式反投影便于实时计算；仍需验证边缘拟合、有效域和下游库支持，不能直接套用其他模型的参数</td>
+<td><code>calib3d</code>／<code>ccalib</code> 无直接对应的标准模型 API；需实现投影／反投影，再用 <code>cv2.remap</code> 重采样</td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="section-3-1-2-样例中实际使用的模型">3.1.2 样例中实际使用的模型</h4>
+<div class="table-scroll" role="region" aria-label="数据表格" tabindex="0"><table>
+<thead>
+<tr>
+<th>样例设备</th>
+<th>文件中实际出现的模型与尺寸</th>
+<th>本文采用的解释及边界</th>
+<th>标定文件样例</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ego-Air</td>
+<td><code>fisheye.json</code> 中 4 路 SEUCM，640×480；RGB SEUCM，1600×1200</td>
+<td>SEUCM 含 α, β，现有适配按 EUCM 公式解释；这一解释还要用图像对应验证，单凭字段不能认定与厂商定义完全等价</td>
+<td><details><summary>JSON 字段结构</summary><pre><code class="language-json">{
+  &quot;model&quot;: null,
+  &quot;resolution&quot;: {&quot;width&quot;: null, &quot;height&quot;: null},
+  &quot;intrinsics&quot;: {&quot;fx&quot;: null, &quot;fy&quot;: null, &quot;cx&quot;: null, &quot;cy&quot;: null},
+  &quot;projection_center&quot;: {&quot;uc&quot;: null, &quot;vc&quot;: null},
+  &quot;distortion&quot;: {&quot;alpha&quot;: null, &quot;beta&quot;: null},
+  &quot;extrinsics&quot;: {&quot;T&quot;: [], &quot;R&quot;: []}
+}</code></pre></details></td>
+</tr>
+<tr>
+<td>Ego-Mate-Duo＋Wristcam</td>
+<td>相机 YAML 的 cameras 分支为 KB；本组头环和腕部标定均为 1600×1300；头环 IMU YAML 另含 Brown 参数</td>
+<td>相机几何用相机文件中对应尺寸的 KB4；相机—IMU 外参单独读取，IMU 文件里的另一组 Brown 内参不混入 KB 图像处理</td>
+<td><details><summary>YAML 字段结构</summary><pre><code class="language-yaml">cameras:
+- id: null
+  name: null
+  distortion_model: null
+  image_width: null
+  image_height: null
+  intrinsics: {fx: null, fy: null, cx: null, cy: null}
+  distortion: {k1: null, k2: null, k3: null, k4: null, k5: null, k6: null, p1: null, p2: null}
+  extrinsics:
+    rotation: []
+    translation: []
+  vcm_code: null</code></pre></details></td>
+</tr>
+<tr>
+<td>Ego-Mate-Duo＋Finger</td>
+<td>头环 KB，1600×1200；Finger 的 cameras 分支为 KB，RGB 1600×1200、Mono 1280×960；另有 cameras_ext1 的 kb10 分支</td>
+<td>按明确的分支成套使用内参、畸变与外参，不能只把 kb10 的部分系数填进 KB4。流名 IR_L/IR_R 只作为文件标识保留，不据此推断主动红外工作方式</td>
+<td><details><summary>YAML 字段结构</summary><pre><code class="language-yaml">cameras:
+- id: null
+  name: null
+  distortion_model: null
+  image_width: null
+  image_height: null
+  intrinsics: {fx: null, fy: null, cx: null, cy: null}
+  distortion: {k1: null, k2: null, k3: null, k4: null, k5: null, k6: null, p1: null, p2: null}
+  extrinsics:
+    rotation: []
+    translation: []
+  vcm_code: null</code></pre></details></td>
+</tr>
+<tr>
+<td>Ego-Mate-Ultra</td>
+<td>4 路相机均为 KB，1600×1200；本组 k5, k6, p1, p2 均为零</td>
+<td>Rig 可视化使用 cameras 分支的 KB4 原生标定，不裁剪、不缩放，也不借用规格书标称 FOV 生成视场</td>
+<td><details><summary>YAML 字段结构</summary><pre><code class="language-yaml">cameras:
+- id: null
+  name: null
+  distortion_model: null
+  image_width: null
+  image_height: null
+  intrinsics: {fx: null, fy: null, cx: null, cy: null}
+  distortion: {k1: null, k2: null, k3: null, k4: null, k5: null, k6: null, p1: null, p2: null}
+  extrinsics:
+    rotation: []
+    translation: []
+  vcm_code: null</code></pre></details></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="section-3-1-3-坐标与变换约定">3.1.3 坐标与变换约定</h4>
+<p>下文统一用 <code>T_A_B</code> 表示从 B 坐标系到 A 坐标系的变换，长度单位为米：</p>
+<div class="equation"><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><msub><mi>p</mi><mi>A</mi></msub><mo>=</mo><msub><mi>R</mi><mrow><mi>A</mi><mi mathvariant="normal">_</mi><mi>B</mi></mrow></msub><mtext> </mtext><msub><mi>p</mi><mi>B</mi></msub><mo>+</mo><msub><mi>t</mi><mrow><mi>A</mi><mi mathvariant="normal">_</mi><mi>B</mi></mrow></msub><mi mathvariant="normal">.</mi></mrow><annotation encoding="application/x-tex">p_A = R_{A\_B}\,p_B + t_{A\_B}.</annotation></semantics></math></span></div>
+<p>相机采用右手系：X 向右、Y 向下、Z 向前；IMU 坐标轴以标定文件为准。头环与腕部独立运动，两者的相对位姿随时间变化。</p>
+<h4 id="section-3-1-4-rig-visualization">3.1.4 Rig Visualization</h4>
+<p>通过统一的 Rig Viewer 查看各组设备的相机位置、朝向、双目基线与标定视场，并结合人体示意对照头环与腕部的观测覆盖。</p>
+<figure class="demo" id="rig-demo">
+  <div class="demo-bar">
+    <span>设备 Rig Viewer</span>
+    <button class="demo-fullscreen" type="button" aria-label="全屏" title="全屏" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+        <path class="expand-icon" d="M4 9V4h5m6 0h5v5m0 6v5h-5m-6 0H4v-5"/>
+        <path class="shrink-icon" d="M9 4v5H4m16 0h-5V4m0 16v-5h5m-16 0h5v5"/>
+      </svg>
+    </button>
+  </div>
+  <iframe src="./demos/rig-viewer/index.html" title="设备 Rig Viewer" loading="lazy"></iframe>
+  <figcaption>选择设备组合，拖动查看相机位置与视场。部件内相机几何取自标定，人体与头腕相对姿态为示意。</figcaption>
+</figure>
+<h4 id="section-3-1-5-布局与观测覆盖">3.1.5 布局与观测覆盖</h4>
+<p>双目头环提供前方重叠视野，四目头环通过侧向相机扩展周边覆盖；腕部设备随手独立运动，其相对头环的位姿需要后续估计。视场锥表示标定模型的覆盖，实际有效观测还受遮挡和成像区域限制。</p>
+<h3 id="section-3-2-时间同步与曝光时序">3.2 时间同步与曝光时序</h3>
+<p>头部与手部持续运动，多路观测需要在时间上对齐，才能描述同一次操作。已支持设备采用以下同步方式：</p>
+<div class="table-scroll" role="region" aria-label="数据表格" tabindex="0"><table>
+<thead>
+<tr>
+<th>同步关系</th>
+<th>当前方式</th>
+<th>数据表达</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>设备内多相机组</td>
+<td>时间硬同步</td>
+<td>同一快门时刻采集；例如 <code>stereo_left</code> 与 <code>stereo_right</code> 的对应帧共享时间戳</td>
+</tr>
+<tr>
+<td>IMU 与相机</td>
+<td>时间软同步</td>
+<td>将 IMU 采样与相机帧对齐，保留时间映射</td>
+</tr>
+<tr>
+<td>跨设备相机</td>
+<td>时间软同步</td>
+<td>为头环与腕部图像建立时间对应，保留原始时间、配对关系与时间差</td>
+</tr>
+</tbody>
+</table></div>
+<figure><img loading="lazy" width="2880" height="972" decoding="async" src="./assets/time_alignment.png" alt="硬同步相机组、IMU 与跨设备相机的时间关系示意" /><figcaption>图 7｜设备内硬同步、IMU 与跨设备软同步。时间间隔和偏移仅为示意，不代表实测同步误差。</figcaption></figure>
+<p>每路时间戳需明确时钟域、单位、时间原点及曝光时刻语义。软件对齐不改变原始采样时刻，因此交付时保留原始时间与对齐后的关联，并按任务要求检查配对时间差和观测缺口，标记不满足要求的片段。</p>
+<h3 id="section-3-3-出厂标定-投产前验证与数据-设备追溯">3.3 出厂标定、投产前验证与数据—设备追溯</h3>
+<p>我们以设备出厂标定作为处理输入，正式投产前固定标定参数，通过极线校正、视差／深度、特征匹配、全景和定位结果反向验证其适用性，具体方法见第四章。</p>
+<p>标定参数随采集数据一起落盘，与会话、设备、传感器流和采集模式关联。后续处理使用该次采集的标定快照，并记录时间映射、处理配置与版本，形成数据到设备、传感器参数及派生结果的血缘：</p>
+<pre><code class="language-text">原始帧／IMU 采样
+  → 采集会话＋设备标识＋传感器流＋原始时间
+  → 本次采集的标定快照＋采集模式
+  → 时间映射＋处理配置与版本
+  → 校正图／深度／位姿等派生结果
+</code></pre>
+<p>复核或重处理时，按会话与传感器流查找对应的原始帧、标定快照和处理配置。</p>
+<h2 id="validation">第四章：从图像处理到空间定位，验证数据是否适用</h2>
+<p>第三章定义了空间与时间约定。本章检查这些图像、IMU 和标定放进实际算法后能否一起工作。</p>
+<p>本章用三组结果逐层检查：双目能否建立深度关系，多目能否形成连贯视野，连续运动中的头环与腕部能否进入同一空间。三组结果检验的是数据和处理链路合在一起是否适用，不能逐项证明每个传感器、每组标定参数都准确。</p>
+<div class="table-scroll" role="region" aria-label="数据表格" tabindex="0"><table>
+<thead>
+<tr>
+<th>验证链路</th>
+<th>本章真实材料</th>
+<th>重点检查</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>双目校正 → 视差 → 公制深度</td>
+<td>Ego-Air RGB 双目的同帧图像与深度数组</td>
+<td>像素对应、纵向残差、深度尺度及无效区域</td>
+</tr>
+<tr>
+<td>多路视角 → 柱面全景</td>
+<td>多目头环的连续拼接视频</td>
+<td>重叠区域、接缝、近场视差与运动中的稳定性</td>
+</tr>
+<tr>
+<td>各设备 VIO → 跨设备定位 → 共同坐标系</td>
+<td>Ego-Mate-Duo＋双 Wristcam 的定位回放与后端统计</td>
+<td>图像／IMU 的连续可用性、共同观测及动态相对位姿</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="section-4-1-双目-从极线校正到视差与深度">4.1 双目：从极线校正到视差与深度</h3>
+<p>深度是第一人称数据中重要的几何信息。它为 RGB 观测补充物体距离、场景结构与空间尺度，为后续空间定位、三维建图和手物交互分析提供几何输入。</p>
+<p>估计深度的另一个目的，是反向验证标定精度。双目深度依赖内参、畸变模型、基线与相机间外参；标定不准确可能表现为极线错位、三维结构变形或深度尺度偏差。因此，极线对齐、深度结构和跨视角重投影的一致性，可以共同佐证标定的适用性；与独立测距参考比较，则能进一步量化深度误差。</p>
+<p>这条处理链路从极线校正开始：根据内外参和畸变模型重映射图像，使同一空间点在校正后的两幅图中落在同一像素行，便于沿水平方向估计视差，再将视差转换为深度。</p>
+<p>以下以 Duo／Ultra 的 KB4 双目为例，使用 <a href="https://docs.opencv.org/4.13.0/db/d58/group__calib3d__fisheye.html">OpenCV fisheye</a> 完成校正与重采样。<code>K1/K2</code> 是与输入图像尺寸匹配的内参，<code>D1/D2</code> 按 <code>k1, k2, k3, k4</code> 排列；<code>R, t</code> 将左相机坐标变换到右相机坐标，平移单位为米。</p>
+<pre><code class="language-python">import cv2
+
+
+def rectify_kb4(left, right, K1, D1, K2, D2, R, t):
+    # 内外参为浮点 NumPy 数组；左右图像尺寸相同。
+    size = (left.shape[1], left.shape[0])
+    R1, R2, P1, P2, Q = cv2.fisheye.stereoRectify(
+        K1, D1, K2, D2, size, R, t,
+        flags=cv2.fisheye.CALIB_ZERO_DISPARITY,
+        newImageSize=size, balance=0.0,
+    )
+    map1 = cv2.fisheye.initUndistortRectifyMap(
+        K1, D1, R1, P1, size, cv2.CV_32FC1,
+    )
+    map2 = cv2.fisheye.initUndistortRectifyMap(
+        K2, D2, R2, P2, size, cv2.CV_32FC1,
+    )
+    left_rect = cv2.remap(left, map1[0], map1[1], cv2.INTER_LINEAR)
+    right_rect = cv2.remap(right, map2[0], map2[1], cv2.INTER_LINEAR)
+    return left_rect, right_rect, P1, P2, Q
+</code></pre>
+<p>Ego-Air 的 SEUCM 需按自身投影模型生成映射，再用 <code>cv2.remap</code> 重采样。下图保留其已有的校正与视差结果，用于展示检查方式，不是上述 KB4 代码的输出。</p>
+<figure><img loading="lazy" width="4800" height="1284" decoding="async" src="./assets/stereo_rectified_guides.png" alt="Ego-Air 校正后的左右图、同高度水平辅助线与原始视差可视化" /><figcaption>图 8｜左、中为校正后的 RGB 双目，辅助线位于相同像素行；右为视差图。检查对象是左右图中同一特征的行坐标，而非物体边缘是否水平。</figcaption></figure>
+<p>单帧的 689 对候选匹配中，绝对纵向差的中位数约为 3.8 px，P95 约为 8.4 px。候选点尚未通过几何误差筛选，仍需在多帧上复核。</p>
+<p>在校正后两目焦距与主点相同的水平双目中，视差 <span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mo>=</mo><msub><mi>u</mi><mrow><mi>l</mi><mi>e</mi><mi>f</mi><mi>t</mi></mrow></msub><mo>−</mo><msub><mi>u</mi><mrow><mi>r</mi><mi>i</mi><mi>g</mi><mi>h</mi><mi>t</mi></mrow></msub></mrow><annotation encoding="application/x-tex">d=u_{left}-u_{right}</annotation></semantics></math></span> 可转换为深度：</p>
+<div class="equation"><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi>Z</mi><mo>=</mo><mfrac><mrow><mi>f</mi><mi>B</mi></mrow><mi>d</mi></mfrac><mi mathvariant="normal">.</mi></mrow><annotation encoding="application/x-tex">Z=\frac{fB}{d}.</annotation></semantics></math></span></div>
+<p><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>f</mi></mrow><annotation encoding="application/x-tex">f</annotation></semantics></math></span> 为校正后的水平焦距（px），<span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>B</mi></mrow><annotation encoding="application/x-tex">B</annotation></semantics></math></span> 为基线（m），<span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi></mrow><annotation encoding="application/x-tex">d</annotation></semantics></math></span> 为视差（px），<span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Z</mi></mrow><annotation encoding="application/x-tex">Z</annotation></semantics></math></span> 为沿校正后左相机光轴的深度（m）。图像若经过缩放，焦距与视差也需使用对应分辨率下的数值。</p>
+<p>对上述<a href="https://docs.opencv.org/4.13.0/dd/d53/tutorial_py_depthmap.html">双目深度关系</a>作一阶微分，小幅参数偏差对深度的影响可近似写为：</p>
+<div class="equation"><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mfrac><mrow><mi mathvariant="normal">Δ</mi><mi>Z</mi></mrow><mi>Z</mi></mfrac><mo>≈</mo><mfrac><mrow><mi mathvariant="normal">Δ</mi><mi>f</mi></mrow><mi>f</mi></mfrac><mo>+</mo><mfrac><mrow><mi mathvariant="normal">Δ</mi><mi>B</mi></mrow><mi>B</mi></mfrac><mo>−</mo><mfrac><mrow><mi mathvariant="normal">Δ</mi><mi>d</mi></mrow><mi>d</mi></mfrac><mi mathvariant="normal">.</mi></mrow><annotation encoding="application/x-tex">\frac{\Delta Z}{Z}
+\approx
+\frac{\Delta f}{f}
++\frac{\Delta B}{B}
+-\frac{\Delta d}{d}.</annotation></semantics></math></span></div>
+<p>它说明焦距、基线的标定偏差与视差估计偏差如何传递到深度，为从深度结果反向检查标定提供依据。</p>
+<figure><img loading="lazy" width="2560" height="960" decoding="async" src="./assets/stereo_metric_depth.png" alt="Ego-Air 同帧 RGB 与带米制色条的轴向深度" /><figcaption>图 9｜同帧校正 RGB 与双目模型估计的米制深度。色条为 0.5–5.0 m，灰色为非正值或非有限值区域；显示区间不代表设备量程。</figcaption></figure>
+<p>该帧约 97.56% 的像素具有有限的正深度值。检验标定时，可结合极线残差与跨视角重投影检查深度的几何一致性。评估绝对测距精度还需独立参考测量。</p>
+<h3 id="section-4-2-多目拼接-标准化虚拟视图与几何验证">4.2 多目拼接：标准化虚拟视图与几何验证</h3>
+<p>多目拼接将不同朝向的相机图像组织到约定的投影与视野中，形成虚拟全景视图。通过统一投影、朝向和输出规格，可以减少不同设备在相机数量与布局上的差异，为跨设备数据对齐提供更一致的观测表达。</p>
+<p>拼接也是验证内外参与特征匹配的方法：检查去畸变后的重叠区对应、融合前的对齐残差，并将特征恢复的相对姿态与标定外参比较，能够从实际图像反向检验几何一致性。</p>
+<p>在统一虚拟像面上，可用<a href="https://docs.opencv.org/4.13.0/d9/dab/tutorial_homography.html">单应变换</a>的对齐误差衡量对应点是否重合：</p>
+<div class="equation"><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><msub><mover accent="true"><mi>p</mi><mo>^</mo></mover><mi>j</mi></msub><mo>=</mo><mi mathvariant="normal">dehom</mi><mo>⁡</mo><mo stretchy="false">(</mo><msub><mi>H</mi><mrow><mi>j</mi><mi>i</mi></mrow></msub><msub><mover accent="true"><mi>p</mi><mo>~</mo></mover><mi>i</mi></msub><mo stretchy="false">)</mo><mo separator="true">,</mo><mspace width="2em"/><msub><mi>e</mi><mi>H</mi></msub><mo>=</mo><msub><mrow><mo fence="true">∥</mo><msub><mi>p</mi><mi>j</mi></msub><mo>−</mo><msub><mover accent="true"><mi>p</mi><mo>^</mo></mover><mi>j</mi></msub><mo fence="true">∥</mo></mrow><mn>2</mn></msub><mi mathvariant="normal">.</mi></mrow><annotation encoding="application/x-tex">\hat p_j=\operatorname{dehom}(H_{ji}\tilde p_i),\qquad
+e_H=\left\lVert p_j-\hat p_j\right\rVert_2.</annotation></semantics></math></span></div>
+<p>其中 <span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover accent="true"><mi>p</mi><mo>~</mo></mover><mi>i</mi></msub><mo>=</mo><mo stretchy="false">(</mo><msub><mi>u</mi><mi>i</mi></msub><mo separator="true">,</mo><msub><mi>v</mi><mi>i</mi></msub><mo separator="true">,</mo><mn>1</mn><msup><mo stretchy="false">)</mo><mi mathvariant="normal">⊤</mi></msup></mrow><annotation encoding="application/x-tex">\tilde p_i=(u_i,v_i,1)^\top</annotation></semantics></math></span> 为齐次像素坐标，<span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>H</mi><mrow><mi>j</mi><mi>i</mi></mrow></msub></mrow><annotation encoding="application/x-tex">H_{ji}</annotation></semantics></math></span> 将视图 <span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>i</mi></mrow><annotation encoding="application/x-tex">i</annotation></semantics></math></span> 映射到视图 <span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>j</mi></mrow><annotation encoding="application/x-tex">j</annotation></semantics></math></span>，<span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">dehom</mi><mo>⁡</mo></mrow><annotation encoding="application/x-tex">\operatorname{dehom}</annotation></semantics></math></span> 表示除以第三分量恢复二维坐标。<span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>e</mi><mi>H</mi></msub></mrow><annotation encoding="application/x-tex">e_H</annotation></semantics></math></span> 的单位为像素，同时受视差、匹配质量和变换模型影响，不单独等同于标定误差。</p>
+<figure class="media"><video controls muted playsinline preload="none" width="1280" height="1302" src="./assets/grid_cyl.mp4"><a href="./assets/grid_cyl.mp4">下载多目柱面全景视频</a></video><figcaption>四目头环中三路相机的柱面拼接视频（约 39 秒）。上方为三路原始画面，下方为拼接结果。</figcaption></figure>
+<p>OpenCV 提供通用拼接接口 <a href="https://docs.opencv.org/4.13.0/d2/d8d/classcv_1_1Stitcher.html"><code>cv2.Stitcher_create</code></a>，通过 <code>stitch()</code> 完成图像匹配、相机参数估计与全景合成：</p>
+<pre><code class="language-python">import cv2
+
+# images：按各自镜头模型完成去畸变、具有重叠视野的图像列表。
+stitcher = cv2.Stitcher_create(cv2.Stitcher_PANORAMA)
+status, panorama = stitcher.stitch(images)
+if status != cv2.Stitcher_OK:
+    raise RuntimeError(f&quot;Panorama stitching failed: {status}&quot;)
+</code></pre>
+<p>这是通用 API 示例。视频采用针对固定 rig 的处理流程：KB4 去畸变、SIFT 特征匹配、几何筛选与固定单应对齐，再投影到柱面并融合。当前拟合记录中，特征恢复的相对旋转与标定外参分别相差约 0.33°、0.36°，可作为旋转一致性的参考。</p>
+<p>多相机光心不同，近场手物仍可能产生视差和遮挡；虚拟全景不能完全等同于单一光心的相机。因此，验证应保留融合前的匹配与残差，结合近场目标和动态接缝检查，而不能只看最终全景是否自然。</p>
+<h3 id="section-4-3-连续运动-从共同观测到统一空间定位">4.3 连续运动：从共同观测到统一空间定位</h3>
+<p>连续定位将头环与腕部的运动放入同一空间，为场景理解和操作分析提供位姿信息，也检验相机模型、时空标定与跨设备观测能否共同工作。本例使用 Duo 与双侧 Wristcam，处理链路为：</p>
+<pre><code class="language-text">各设备图像＋IMU → 单设备 VIO
+头环三维地图＋腕部 2D–3D 对应 → 跨设备地图定位
+各设备里程计＋跨设备位姿约束 → 共同坐标系轨迹
+</code></pre>
+<p>以下 OpenCV API 用于说明关键几何步骤；展示结果来自既有 VIO 与跨设备定位管线。</p>
+<h4 id="section-4-3-1-特征匹配-建立共同观测">4.3.1 特征匹配：建立共同观测</h4>
+<p>同相机跨帧匹配检查运动中的场景关联，头环—腕部匹配则建立不同视角间的共同观测。通用特征匹配可参考 <a href="https://docs.opencv.org/4.13.0/dc/dc3/tutorial_py_matcher.html"><code>cv2.SIFT_create</code>、<code>cv2.BFMatcher.knnMatch</code> 与 <code>cv2.drawMatches</code></a>。对应点需经过几何筛选，并关注静态背景、像面覆盖与重复纹理。</p>
+<figure><img loading="lazy" width="3200" height="1300" decoding="async" src="./assets/head_cam0_match.png" alt="头环 head cam0 两张图像之间的特征匹配" /><figcaption>图 11｜同一头环相机的跨帧候选匹配，展示连续运动中的共同观测，不是左右目立体匹配。</figcaption></figure>
+<figure><img loading="lazy" width="3200" height="1300" decoding="async" src="./assets/head_cam0_left_wrist_match.png" alt="头环 head cam0 与左 Wristcam 图像之间的特征匹配" /><figcaption>图 12｜头环与左腕的跨设备候选匹配。视角、尺度与遮挡不同，仍可建立共同场景对应；定位还需进一步关联三维地图点。</figcaption></figure>
+<h4 id="section-4-3-2-地图点回投-检查跨帧几何一致性">4.3.2 地图点回投：检查跨帧几何一致性</h4>
+<p>固定较早关键帧估计的三维地图点，用后续位姿和相机模型重新投影，比较预测位置与实际观测。针孔／Brown 模型可参考 <a href="https://docs.opencv.org/4.13.0/d9/d0c/group__calib3d.html"><code>cv2.projectPoints</code></a>，KB4 模型对应 <a href="https://docs.opencv.org/4.13.0/db/d58/group__calib3d__fisheye.html"><code>cv2.fisheye.projectPoints</code></a>。</p>
+<p>单个地图点的重投影误差为：</p>
+<div class="equation"><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><msub><mi>e</mi><mi>k</mi></msub><mo>=</mo><msub><mrow><mo fence="true">∥</mo><msub><mi>u</mi><mi>k</mi></msub><mo>−</mo><msub><mi>π</mi><mi>C</mi></msub><mtext> ⁣</mtext><mrow><mo fence="true">(</mo><msub><mi>R</mi><mrow><mi>C</mi><mi mathvariant="normal">_</mi><mi>M</mi></mrow></msub><msub><mi>X</mi><mi>k</mi></msub><mo>+</mo><msub><mi>t</mi><mrow><mi>C</mi><mi mathvariant="normal">_</mi><mi>M</mi></mrow></msub><mo fence="true">)</mo></mrow><mo fence="true">∥</mo></mrow><mn>2</mn></msub><mi mathvariant="normal">.</mi></mrow><annotation encoding="application/x-tex">e_k=\left\lVert
+u_k-\pi_C\!\left(R_{C\_M}X_k+t_{C\_M}\right)
+\right\rVert_2.</annotation></semantics></math></span></div>
+<p>其中 <span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>X</mi><mi>k</mi></msub></mrow><annotation encoding="application/x-tex">X_k</annotation></semantics></math></span> 为三维地图点，<span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>u</mi><mi>k</mi></msub></mrow><annotation encoding="application/x-tex">u_k</annotation></semantics></math></span> 为实际像素观测，<span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>R</mi><mrow><mi>C</mi><mi mathvariant="normal">_</mi><mi>M</mi></mrow></msub><mo separator="true">,</mo><msub><mi>t</mi><mrow><mi>C</mi><mi mathvariant="normal">_</mi><mi>M</mi></mrow></msub></mrow><annotation encoding="application/x-tex">R_{C\_M},t_{C\_M}</annotation></semantics></math></span> 将地图坐标变换到相机坐标，<span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>π</mi><mi>C</mi></msub></mrow><annotation encoding="application/x-tex">\pi_C</annotation></semantics></math></span> 包含内参与畸变模型。该误差连接地图、位姿与标定，也是 <a href="https://docs.opencv.org/4.13.0/d5/d1f/calib3d_solvePnP.html">PnP 位姿估计</a>的重要优化依据。</p>
+<figure><img loading="lazy" width="800" height="650" decoding="async" src="./assets/seq_00000112_cam_0.png" alt="头环 head cam0 在关键帧序列号 112 的地图点跨关键帧重投影" /><figcaption>图 13｜绿色圆圈为二维观测，红色叉号为地图点回投；黄／紫线分别表示误差不超过／超过显示阈值 8 px，橙色标记投影无效。8 px 不是验收阈值。</figcaption></figure>
+<p>图中关键帧有 49 条有效观测，重投影误差中位数为 1.53 px、P95 为 6.19 px，单位为 800×650 图像上的像素。它检查地图点、位姿与标定的共同一致性；这些量来自同一定位管线，不是独立精度真值。</p>
+<h4 id="section-4-3-3-地图定位-将头环与腕部放入同一空间">4.3.3 地图定位：将头环与腕部放入同一空间</h4>
+<p>将腕部图像特征关联到头环的三维 Landmark，形成 2D–3D 对应，再估计腕部在地图中的位姿。单相机定位可参考 <a href="https://docs.opencv.org/4.13.0/d5/d1f/calib3d_solvePnP.html"><code>cv2.solvePnPRansac</code></a>；KB4 图像可先用 <a href="https://docs.opencv.org/4.13.0/db/d58/group__calib3d__fisheye.html"><code>cv2.fisheye.undistortPoints</code></a> 得到归一化像点，再以单位内参、无畸变求解。PnP 返回地图到相机的变换，求逆后才是相机在地图中的位姿。</p>
+<figure><img loading="lazy" width="2830" height="2004" decoding="async" src="./assets/cross_device_debug_oneframe.png" alt="头环三维地图上左右 Wristcam 各一个选中查询帧的匹配地图点" /><figcaption>图 14｜灰色为头环地图；绿／红表示仅左／右腕选中帧匹配的点，紫色为两帧共享点。左右各选一个高内点数的成功查询，非随机抽样，也不是同一时刻。</figcaption></figure>
+<p>将跨设备定位约束与各设备的 VIO 里程计共同优化，可得到统一地图中的头环和双腕轨迹。在共同时间 <span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>t</mi></mrow><annotation encoding="application/x-tex">t</annotation></semantics></math></span> 下，腕部相对头环的位姿为：</p>
+<div class="equation"><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><msub><mi>T</mi><mrow><mi>H</mi><mi mathvariant="normal">_</mi><mi>R</mi></mrow></msub><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>=</mo><msub><mi>T</mi><mrow><mi>M</mi><mi mathvariant="normal">_</mi><mi>H</mi></mrow></msub><mo stretchy="false">(</mo><mi>t</mi><msup><mo stretchy="false">)</mo><mrow><mo>−</mo><mn>1</mn></mrow></msup><mtext> </mtext><msub><mi>T</mi><mrow><mi>M</mi><mi mathvariant="normal">_</mi><mi>R</mi></mrow></msub><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mi mathvariant="normal">.</mi></mrow><annotation encoding="application/x-tex">T_{H\_R}(t)=T_{M\_H}(t)^{-1}\,T_{M\_R}(t).</annotation></semantics></math></span></div>
+<p>其中 <span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>M</mi></mrow><annotation encoding="application/x-tex">M</annotation></semantics></math></span> 为地图、<span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>H</mi></mrow><annotation encoding="application/x-tex">H</annotation></semantics></math></span> 为头环、<span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>R</mi></mrow><annotation encoding="application/x-tex">R</annotation></semantics></math></span> 为腕部设备坐标系；相机位姿需先通过设备内外参转换到相应设备坐标系。</p>
+<figure class="demo" id="pose-demo">
+  <div class="demo-bar">
+    <span>跨设备定位回放</span>
+    <button class="demo-fullscreen" type="button" aria-label="全屏" title="全屏" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+        <path class="expand-icon" d="M4 9V4h5m6 0h5v5m0 6v5h-5m-6 0H4v-5"/>
+        <path class="shrink-icon" d="M9 4v5H4m16 0h-5V4m0 16v-5h5m-16 0h5v5"/>
+      </svg>
+    </button>
+  </div>
+  <iframe src="./demos/cross-device/index.html" title="跨设备定位回放" loading="lazy"></iframe>
+  <figcaption>主视图显示同一地图中的头环、双腕估计轨迹与 SLAM 地图点。底部四路相机画面随时间轴更新。</figcaption>
+</figure>
+<h2 id="virtual-camera">第五章：Virtual Camera 与标准化视觉观测接口</h2>
+<p>虚拟相机为不同分辨率、镜头模型和像素几何提供统一的观测接口，让下游按同一规范解释像素视线。</p>
+<p>同一虚拟像素在各自约定的坐标系中对应同一方向；设备的世界位姿、光心、曝光、噪声、颜色和可见范围仍各不相同。</p>
+<h3 id="section-5-1-输出规范">5.1 输出规范</h3>
+<p>Ego-Air 与 <code>unitree_gd1</code> 的示例共用以下输出配置，尚非所有设备的生产规格。</p>
+<div class="table-scroll" role="region" aria-label="数据表格" tabindex="0"><table>
+<thead>
+<tr>
+<th>项目</th>
+<th>本节示例的定义</th>
+<th>需要保留的边界</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>投影与尺寸</td>
+<td>左右共用针孔模型，输出各 640×480</td>
+<td>输入是广角图，输出也不能继续标为原镜头模型</td>
+</tr>
+<tr>
+<td>视角与内参</td>
+<td>水平 100°、垂直 70°，主点位于图像中心</td>
+<td>角度按中心扫描线两端像素中心定义，不等于硬件有效 FOV</td>
+</tr>
+<tr>
+<td>双目坐标</td>
+<td>光轴平行，基线沿虚拟 X 轴，X 右、Y 下、Z 前</td>
+<td>坐标方向改变，各自光心不移动</td>
+</tr>
+<tr>
+<td>几何尺度</td>
+<td>保留该标定快照中的真实基线，以米表示</td>
+<td>不同设备或标定样例不能强行共用一个基线值</td>
+</tr>
+<tr>
+<td>时间与有效区域</td>
+<td>关联原始帧时间，并附各路几何采样 Mask</td>
+<td>几何重映射不改变曝光时刻，也不完成时钟校正</td>
+</tr>
+</tbody>
+</table></div>
+<p>按像素中心端点 <code>0…W−1</code>、<code>0…H−1</code> 定义 FOV：</p>
+<div class="equation"><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mtable rowspacing="0.25em" columnalign="right left" columnspacing="0em"><mtr><mtd><mstyle scriptlevel="0" displaystyle="true"><msub><mi>f</mi><mi>x</mi></msub></mstyle></mtd><mtd><mstyle scriptlevel="0" displaystyle="true"><mrow><mrow></mrow><mo>=</mo><mfrac><mrow><mi>W</mi><mo>−</mo><mn>1</mn></mrow><mrow><mn>2</mn><mi>tan</mi><mo>⁡</mo><mo stretchy="false">(</mo><mrow><mi mathvariant="normal">H</mi><mi mathvariant="normal">F</mi><mi mathvariant="normal">O</mi><mi mathvariant="normal">V</mi></mrow><mi mathvariant="normal">/</mi><mn>2</mn><mo stretchy="false">)</mo></mrow></mfrac><mo separator="true">,</mo><mspace width="1em"/><msub><mi>c</mi><mi>x</mi></msub><mo>=</mo><mfrac><mrow><mi>W</mi><mo>−</mo><mn>1</mn></mrow><mn>2</mn></mfrac></mrow></mstyle></mtd></mtr><mtr><mtd><mstyle scriptlevel="0" displaystyle="true"><msub><mi>f</mi><mi>y</mi></msub></mstyle></mtd><mtd><mstyle scriptlevel="0" displaystyle="true"><mrow><mrow></mrow><mo>=</mo><mfrac><mrow><mi>H</mi><mo>−</mo><mn>1</mn></mrow><mrow><mn>2</mn><mi>tan</mi><mo>⁡</mo><mo stretchy="false">(</mo><mrow><mi mathvariant="normal">V</mi><mi mathvariant="normal">F</mi><mi mathvariant="normal">O</mi><mi mathvariant="normal">V</mi></mrow><mi mathvariant="normal">/</mi><mn>2</mn><mo stretchy="false">)</mo></mrow></mfrac><mo separator="true">,</mo><mspace width="1em"/><msub><mi>c</mi><mi>y</mi></msub><mo>=</mo><mfrac><mrow><mi>H</mi><mo>−</mo><mn>1</mn></mrow><mn>2</mn></mfrac></mrow></mstyle></mtd></mtr></mtable><annotation encoding="application/x-tex">\begin{aligned}
+f_x &amp;= \frac{W-1}{2\tan(\mathrm{HFOV}/2)}, \quad c_x = \frac{W-1}{2} \\
+f_y &amp;= \frac{H-1}{2\tan(\mathrm{VFOV}/2)}, \quad c_y = \frac{H-1}{2}
+\end{aligned}</annotation></semantics></math></span></div>
+<p>本例的虚拟内参为：</p>
+<div class="equation"><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mtable rowspacing="0.25em" columnalign="right left" columnspacing="0em"><mtr><mtd><mstyle scriptlevel="0" displaystyle="true"><msub><mi>K</mi><mi>V</mi></msub></mstyle></mtd><mtd><mstyle scriptlevel="0" displaystyle="true"><mrow><mrow></mrow><mo>≈</mo><mrow><mo fence="true">[</mo><mtable rowspacing="0.16em" columnalign="center center center" columnspacing="1em"><mtr><mtd><mstyle scriptlevel="0" displaystyle="false"><mn>268.092</mn></mstyle></mtd><mtd><mstyle scriptlevel="0" displaystyle="false"><mn>0</mn></mstyle></mtd><mtd><mstyle scriptlevel="0" displaystyle="false"><mn>319.5</mn></mstyle></mtd></mtr><mtr><mtd><mstyle scriptlevel="0" displaystyle="false"><mn>0</mn></mstyle></mtd><mtd><mstyle scriptlevel="0" displaystyle="false"><mn>342.041</mn></mstyle></mtd><mtd><mstyle scriptlevel="0" displaystyle="false"><mn>239.5</mn></mstyle></mtd></mtr><mtr><mtd><mstyle scriptlevel="0" displaystyle="false"><mn>0</mn></mstyle></mtd><mtd><mstyle scriptlevel="0" displaystyle="false"><mn>0</mn></mstyle></mtd><mtd><mstyle scriptlevel="0" displaystyle="false"><mn>1</mn></mstyle></mtd></mtr></mtable><mo fence="true">]</mo></mrow></mrow></mstyle></mtd></mtr></mtable><annotation encoding="application/x-tex">\begin{aligned}
+K_V &amp;\approx \begin{bmatrix} 268.092 &amp; 0 &amp; 319.5 \\ 0 &amp; 342.041 &amp; 239.5 \\ 0 &amp; 0 &amp; 1 \end{bmatrix}
+\end{aligned}</annotation></semantics></math></span></div>
+<p>本配置允许 <code>fx≠fy</code>。若要求方形像素（<code>fx=fy</code>），垂直 FOV 由水平 FOV 和宽高比决定，不能再独立指定为 70°。<code>resize</code> 只改变尺寸；投影与朝向转换需要同时生成图像和对应内参。</p>
+<h3 id="section-5-2-统一投影与朝向-保留光心和真实基线">5.2 统一投影与朝向，保留光心和真实基线</h3>
+<figure><img loading="lazy" width="3840" height="2440" decoding="async" src="./assets/virtual_stereo_geometry.png" alt="虚拟双目转换前后的光轴、投影与真实基线关系" /><figcaption>图 16｜左右虚拟相机共用投影与朝向，保留原光心及基线 B。视锥仅作几何示意，不表示实测 FOV；图片取自已有原理文章。</figcaption></figure>
+<p>记物理左、右相机为 1、2，虚拟左、右为 V1、V2。沿用 <code>T_A_B</code> 将 B 系变换到 A 系的约定，<code>t_1_2</code> 表示右光心在物理左坐标系中的位置。</p>
+<p>以真实基线为虚拟 X 轴，参考左相机前向确定其余两轴，再将左右光轴旋转到同一朝向：</p>
+<div class="equation"><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mtable rowspacing="0.25em" columnalign="right left" columnspacing="0em"><mtr><mtd><mstyle scriptlevel="0" displaystyle="true"><mi>B</mi></mstyle></mtd><mtd><mstyle scriptlevel="0" displaystyle="true"><mrow><mrow></mrow><mo>=</mo><mo stretchy="false">∥</mo><msub><mi>t</mi><mrow><mn>1</mn><mi mathvariant="normal">_</mi><mn>2</mn></mrow></msub><mo stretchy="false">∥</mo></mrow></mstyle></mtd></mtr><mtr><mtd><mstyle scriptlevel="0" displaystyle="true"><mrow><msub><mi>R</mi><mrow><mi>V</mi><mn>1</mn><mi mathvariant="normal">_</mi><mn>1</mn></mrow></msub><mo>⋅</mo><msub><mi>t</mi><mrow><mn>1</mn><mi mathvariant="normal">_</mi><mn>2</mn></mrow></msub></mrow></mstyle></mtd><mtd><mstyle scriptlevel="0" displaystyle="true"><mrow><mrow></mrow><mo>=</mo><mo stretchy="false">[</mo><mi>B</mi><mo separator="true">,</mo><mtext> </mtext><mn>0</mn><mo separator="true">,</mo><mtext> </mtext><mn>0</mn><msup><mo stretchy="false">]</mo><mi mathvariant="normal">⊤</mi></msup></mrow></mstyle></mtd></mtr><mtr><mtd><mstyle scriptlevel="0" displaystyle="true"><msub><mi>R</mi><mrow><mi>V</mi><mn>2</mn><mi mathvariant="normal">_</mi><mn>2</mn></mrow></msub></mstyle></mtd><mtd><mstyle scriptlevel="0" displaystyle="true"><mrow><mrow></mrow><mo>=</mo><msub><mi>R</mi><mrow><mi>V</mi><mn>1</mn><mi mathvariant="normal">_</mi><mn>1</mn></mrow></msub><mo>⋅</mo><msub><mi>R</mi><mrow><mn>1</mn><mi mathvariant="normal">_</mi><mn>2</mn></mrow></msub></mrow></mstyle></mtd></mtr></mtable><annotation encoding="application/x-tex">\begin{aligned}
+B &amp;= \lVert t_{1\_2} \rVert \\
+R_{V1\_1} \cdot t_{1\_2} &amp;= [B,\ 0,\ 0]^\top \\
+R_{V2\_2} &amp;= R_{V1\_1} \cdot R_{1\_2}
+\end{aligned}</annotation></semantics></math></span></div>
+<p>虚拟右到虚拟左的外参为：</p>
+<div class="equation"><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mtable rowspacing="0.25em" columnalign="right left" columnspacing="0em"><mtr><mtd><mstyle scriptlevel="0" displaystyle="true"><msub><mi>R</mi><mrow><mi>V</mi><mn>1</mn><mi mathvariant="normal">_</mi><mi>V</mi><mn>2</mn></mrow></msub></mstyle></mtd><mtd><mstyle scriptlevel="0" displaystyle="true"><mrow><mrow></mrow><mo>≈</mo><mi>I</mi><mo separator="true">,</mo><mspace width="1em"/><msub><mi>t</mi><mrow><mi>V</mi><mn>1</mn><mi mathvariant="normal">_</mi><mi>V</mi><mn>2</mn></mrow></msub><mo>=</mo><mo stretchy="false">[</mo><mi>B</mi><mo separator="true">,</mo><mtext> </mtext><mn>0</mn><mo separator="true">,</mo><mtext> </mtext><mn>0</mn><msup><mo stretchy="false">]</mo><mi mathvariant="normal">⊤</mi></msup></mrow></mstyle></mtd></mtr></mtable><annotation encoding="application/x-tex">\begin{aligned}
+R_{V1\_V2} &amp;\approx I, \quad t_{V1\_V2} = [B,\ 0,\ 0]^\top
+\end{aligned}</annotation></semantics></math></span></div>
+<p>相机光心不移动，仅改用虚拟坐标系表达。以虚拟左为三维参考，投影矩阵为：</p>
+<div class="equation"><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mtable rowspacing="0.25em" columnalign="right left" columnspacing="0em"><mtr><mtd><mstyle scriptlevel="0" displaystyle="true"><msub><mi>P</mi><mrow><mi>V</mi><mn>1</mn></mrow></msub></mstyle></mtd><mtd><mstyle scriptlevel="0" displaystyle="true"><mrow><mrow></mrow><mo>=</mo><msub><mi>K</mi><mi>V</mi></msub><mrow><mo fence="true">[</mo><mi>I</mi><mo>∣</mo><mn>0</mn><mo fence="true">]</mo></mrow></mrow></mstyle></mtd></mtr><mtr><mtd><mstyle scriptlevel="0" displaystyle="true"><msub><mi>P</mi><mrow><mi>V</mi><mn>2</mn></mrow></msub></mstyle></mtd><mtd><mstyle scriptlevel="0" displaystyle="true"><mrow><mrow></mrow><mo>=</mo><msub><mi>K</mi><mi>V</mi></msub><mrow><mo fence="true">[</mo><mi>I</mi><mo>∣</mo><mo stretchy="false">(</mo><mo>−</mo><mi>B</mi><mo separator="true">,</mo><mtext> </mtext><mn>0</mn><mo separator="true">,</mo><mtext> </mtext><mn>0</mn><msup><mo stretchy="false">)</mo><mi mathvariant="normal">⊤</mi></msup><mo fence="true">]</mo></mrow></mrow></mstyle></mtd></mtr></mtable><annotation encoding="application/x-tex">\begin{aligned}
+P_{V1} &amp;= K_V \left[ I \mid 0 \right] \\
+P_{V2} &amp;= K_V \left[ I \mid (-B,\ 0,\ 0)^\top \right]
+\end{aligned}</annotation></semantics></math></span></div>
+<p>右到左外参中的 <code>+B</code> 与右投影矩阵中的 <code>−fxB</code> 来自相反的变换方向。深度计算需使用当前虚拟焦距、像素尺度及各自基线；不同型号或模型分支的内外参必须成套使用。</p>
+<p>图像生成采用反向映射：由虚拟像素求视线，旋转到物理相机坐标后投影回原图，再插值采样。</p>
+<div class="equation"><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mtable rowspacing="0.25em" columnalign="right left" columnspacing="0em"><mtr><mtd><mstyle scriptlevel="0" displaystyle="true"><msub><mi>r</mi><mi>V</mi></msub></mstyle></mtd><mtd><mstyle scriptlevel="0" displaystyle="true"><mrow><mrow></mrow><mo>=</mo><msubsup><mi>K</mi><mi>V</mi><mrow><mo>−</mo><mn>1</mn></mrow></msubsup><mtext> </mtext><msub><mi>p</mi><mi>V</mi></msub></mrow></mstyle></mtd></mtr><mtr><mtd><mstyle scriptlevel="0" displaystyle="true"><msub><mi>r</mi><mi>i</mi></msub></mstyle></mtd><mtd><mstyle scriptlevel="0" displaystyle="true"><mrow><mrow></mrow><mo>=</mo><msubsup><mi>R</mi><mrow><mi>V</mi><mi>i</mi><mi mathvariant="normal">_</mi><mi>i</mi></mrow><mi mathvariant="normal">⊤</mi></msubsup><mtext> </mtext><msub><mi>r</mi><mi>V</mi></msub></mrow></mstyle></mtd></mtr><mtr><mtd><mstyle scriptlevel="0" displaystyle="true"><msub><mi>p</mi><mi>i</mi></msub></mstyle></mtd><mtd><mstyle scriptlevel="0" displaystyle="true"><mrow><mrow></mrow><mo>=</mo><msub><mi>π</mi><mi>i</mi></msub><mo stretchy="false">(</mo><msub><mi>r</mi><mi>i</mi></msub><mo stretchy="false">)</mo></mrow></mstyle></mtd></mtr></mtable><annotation encoding="application/x-tex">\begin{aligned}
+r_V &amp;= K_V^{-1} \, p_V \\
+r_i &amp;= R_{Vi\_i}^\top \, r_V \\
+p_i &amp;= \pi_i(r_i)
+\end{aligned}</annotation></semantics></math></span></div>
+<p>同光心映射只旋转射线，无需深度；标定与输出配置固定后可预计算映射表。改变光心或物理基线则属于新视角合成，通常需要深度、三维重投影和遮挡处理，二维 Warp 无法普遍恢复未观测区域。</p>
+<h3 id="section-5-3-真实输出">5.3 真实输出</h3>
+<h4 id="section-5-3-1-ego-air-标准视图与有效区域">5.3.1 Ego-Air：标准视图与有效区域</h4>
+<p>本例来自 Ego-Air 的 <code>episode_20260720_150841</code>，与第四章样例不同。前期对比中，SEUCM 在当前设备数据上的去畸变效果优于 PDCM，因此按 SEUCM 的成套标定生成虚拟双目，同步更新图像、旋转、基线和有效区域。</p>
+<figure><img loading="lazy" width="2250" height="1200" decoding="async" src="./assets/virtual_stereo_observations.png" alt="Ego-Air 原始 RGB 双目、虚拟针孔双目与几何采样 Mask" /><figcaption>图 17｜上方为原始 1600×1200 RGB 双目，下方为同光心映射后的 640×480 虚拟双目；原图仅在排版时缩放。右侧为参数与两路 Mask 的同坐标交集。左右几何采样有效率均为 100%，不代表深度全部可靠。</figcaption></figure>
+<p>Mask 只检查源采样坐标有限且距图像边界至少一像素，不评估纹理、模糊、遮挡、镜头有效成像圈或匹配置信度，也不等同于深度有效区域。</p>
+<p><code>valid_1 ∧ valid_2</code> 是同坐标交集；实际匹配需分别检查 <code>(u_left,v)</code> 与 <code>(u_right,v)</code>。交集全白不代表任意深度、任意目标都具备无遮挡的双目观测。</p>
+<p>扩大虚拟 FOV 可能增加边缘拉伸和无源区域，缩小则会丢失周边覆盖。输出分辨率提高也不增加光学细节，应按任务平衡覆盖、采样密度与有效区域。</p>
+<h4 id="section-5-3-2-ego-air-与-unitree_gd1-不同输入-共用输出定义">5.3.2 Ego-Air 与 unitree_gd1：不同输入，共用输出定义</h4>
+<p><code>virtual_results_vfov70</code> 包含两款设备的虚拟双目、标定及对应视差、米制深度和点云：</p>
+<div class="table-scroll wide" role="region" aria-label="数据表格" tabindex="0"><table>
+<thead>
+<tr>
+<th>型号</th>
+<th>物理单目输入尺寸</th>
+<th>输入成像模型适配</th>
+<th>虚拟单目输出尺寸</th>
+<th>保留的基线／mm</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ego-Air（ego_air）</td>
+<td>1600×1200</td>
+<td>SEUCM，沿用前期验证后的选择</td>
+<td>640×480</td>
+<td>65.216</td>
+</tr>
+<tr>
+<td>unitree_gd1</td>
+<td>640×480</td>
+<td>PDCM／Brown-Conrady，包含 k3</td>
+<td>640×480</td>
+<td>59.914</td>
+</tr>
+</tbody>
+</table></div>
+<p>两款设备按各自物理模型接入，共用相同的虚拟针孔定义。结果中四个 <code>K</code> 矩阵一致，均输出 640×480、水平 100°／垂直 70°；各自的深度输入图也与保存的虚拟图逐像素一致。这是派生结果关联的核对，不要求两款设备的像素内容相同。</p>
+<figure><img loading="lazy" width="3000" height="1200" decoding="async" src="./assets/virtual_stereo_cross_model.png" alt="Ego-Air 与 unitree_gd1 的虚拟双目、视差及米制深度对照" /><figcaption>图 18｜上排 Ego-Air，下排 <code>unitree_gd1</code>；依次为虚拟左图、右图、视差和米制深度，均读取已有结果。深度统一显示为 0.25–5.5 m，灰色为非正值或非有限值，色条不表示量程。视差保留原配色，不能跨设备按颜色比较数值。</figcaption></figure>
+<p>下游可复用图像尺寸、<code>K_V</code> 和米制深度接口，匹配到深度的转换仍须使用各自基线。因此，两款设备的右投影矩阵平移项与 <code>Q</code> 不能直接复用，同一深度也可能对应不同视差。</p>
+<p>两组图像并非同位姿、同曝光条件下的同步采集，不能用物体大小、颜色或估计深度是否相等评价虚拟化质量。展示直接读取已有 <code>depth_meter.npy</code>，未从视差色图反算、重跑推理或引入独立测距真值；模型版本、数值视差和绝对误差仍需关联评估。</p>
+<p>三种处理的作用区别如下：</p>
+<div class="table-scroll" role="region" aria-label="数据表格" tabindex="0"><table>
+<thead>
+<tr>
+<th>操作</th>
+<th>主要目标</th>
+<th>不能据此推导的结论</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>双目极线校正</td>
+<td>将可信对应约束为水平搜索，便于视差和深度估计</td>
+<td>图像看起来对齐，不代表标定与同步已通过精度验收</td>
+</tr>
+<tr>
+<td>多目全景拼接</td>
+<td>将多路观测组织为更宽的展示视野</td>
+<td>多光心近场场景不能因此变成一台理想针孔相机的真实观测</td>
+</tr>
+<tr>
+<td>虚拟相机映射</td>
+<td>定义输出投影、视线与坐标接口；本例同时完成双目校正</td>
+<td>统一投影不等于统一光心、基线、成像质量或世界位姿</td>
+</tr>
+</tbody>
+</table></div>
+<p>代数与合成投影闭环检查核对了变换方向、像素尺度和深度公式，不能替代真实图像的独立检查，第四章实测残差仍待解决。图 17 是本章复现的转换，图 18 为已有推理输出，均不构成新增的绝对精度验收。</p>
+<h2 id="quality">第六章：让质量验证进入规模化数据生产</h2>
+<p>规模化采集要验证数据能否在更换设备、人员或场景后，仍然满足任务要求。出现异常时，随数据保存的时间戳、设备标识、标定参数和处理版本，可以帮助把问题追溯到具体的采集片段和处理环节。</p>
+<p>本文从设备产能出发，介绍了如何把不同设备的原始数据变成时空关系明确、可追溯的观测。后续文章会接着写真值产线，说明如何用这些观测生成训练所需的真值，以及如何判断生成结果是否达到交付要求。</p>
+      </article>
+    </div>
+  </main>
+  <footer class="site-footer">
+    <div><span>原力无限 · 具身智能数据工程</span><a href="#top">回到顶部</a></div>
+  </footer>
+</body>
+</html>

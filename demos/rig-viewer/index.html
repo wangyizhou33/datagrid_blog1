@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="查看四组 Ego 设备的相机位置、标定视场和佩戴示意。">
+  <title>Rig Viewer｜设备标定可视化</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="vendor/three.min.js" defer></script>
+  <script src="vendor/OrbitControls.js" defer></script>
+  <script src="calibration.js" defer></script>
+  <script src="geometry.js" defer></script>
+  <script src="human-mesh.js" defer></script>
+  <script src="mannequin.js" defer></script>
+  <script src="rig-scene.js" defer></script>
+  <script src="gui.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <canvas id="viewer" tabindex="0" aria-label="设备标定三维视图。拖动旋转，滚轮缩放，右键平移。Tab 选择画布内的控件，Enter 启用。">Rig Viewer 需要 JavaScript 和 WebGL。</canvas>
+</body>
+</html>
