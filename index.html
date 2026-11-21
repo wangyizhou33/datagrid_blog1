@@ -28,7 +28,19 @@
         <p class="eyebrow">具身智能数据工程</p>
         <h1 id="title"><span>从物理传感器</span><span>到标准化视觉观测</span></h1>
         <p class="hero-deck">第一人称具身数据的工程体系</p>
-        <figure><img width="3064" height="800" decoding="async" src="./assets/real_capture_scenes_5x1.jpg" alt="工厂作业与商超物品取放的五张真实采集照片，一行五列" /><figcaption>图 1｜真实采集场景。左侧三张为工厂作业，右侧两张为商超物品取放；采集人员佩戴设备完成实际操作。</figcaption></figure>
+        <figure>
+          <picture>
+            <source type="image/webp"
+              srcset="./assets/real_capture_scenes_5x1-480.webp 480w,
+                ./assets/real_capture_scenes_5x1-800.webp 800w,
+                ./assets/real_capture_scenes_5x1-1200.webp 1200w,
+                ./assets/real_capture_scenes_5x1-1800.webp 1800w,
+                ./assets/real_capture_scenes_5x1-2360.webp 2360w"
+              sizes="(max-width: 430px) calc(100vw - 32px), min(1180px, calc(100vw - min(10vw, 120px)))">
+            <img fetchpriority="high" width="3064" height="800" decoding="async" src="./assets/real_capture_scenes_5x1.jpg" alt="工厂作业与商超物品取放的五张真实采集照片，一行五列" />
+          </picture>
+          <figcaption>图 1｜真实采集场景。左侧三张为工厂作业，右侧两张为商超物品取放；采集人员佩戴设备完成实际操作。</figcaption>
+        </figure>
       </div>
     </section>
     <div class="layout">
@@ -84,12 +96,50 @@
 </table></div>
 <p>所以采集方案要围绕任务来设计，回答这几个问题：镜头是否覆盖操作区，近场物体是否有足够细节，设备是否妨碍动作，时间偏差是否会破坏跨视角对应。多装相机只是增加潜在观测，实际可用的覆盖还取决于佩戴、遮挡、曝光、同步和几何处理。</p>
 <p>我们把具身智能的数据壁垒归为三项：设备产能支撑持续采集，真值产线把观测转化为可用于训练的真值，场景产能提供任务与环境的覆盖。data scaling 需要三者同时到位，数据规模增长时，质量和场景覆盖才跟得上。</p>
-<figure><img loading="lazy" width="2736" height="832" decoding="async" src="./assets/three_keys.png" alt="数据壁垒的三要素" /></figure>
+<figure>
+  <picture>
+    <source type="image/webp"
+      srcset="./assets/three_keys-480.webp 480w,
+        ./assets/three_keys-960.webp 960w,
+        ./assets/three_keys-1800.webp 1800w"
+      sizes="(max-width: 430px) calc(100vw - 32px), (max-width: 800px) 90vw, calc(min(1180px, calc(100vw - min(10vw, 120px))) - 205px - min(5vw, 72px))">
+    <img loading="lazy" width="2736" height="832" decoding="async" src="./assets/three_keys.png" alt="数据壁垒的三要素" />
+  </picture>
+</figure>
 <p>本文讨论设备产能，即我们已支持的头环与腕部观测设备，以及配套的标定、同步和数据处理。它们给后续真值产线提供时空关系明确的观测输入；随数据保存的标定与元数据，则建立起数据、设备和传感器参数之间的血缘关系。</p>
-<figure><img loading="lazy" width="2300" height="1074" decoding="async" src="./assets/four_components.png" alt="设备产能的四个组成部分" /></figure>
+<figure>
+  <picture>
+    <source type="image/webp"
+      srcset="./assets/four_components-480.webp 480w,
+        ./assets/four_components-960.webp 960w,
+        ./assets/four_components-1800.webp 1800w"
+      sizes="(max-width: 430px) calc(100vw - 32px), (max-width: 800px) 90vw, calc(min(1180px, calc(100vw - min(10vw, 120px))) - 205px - min(5vw, 72px))">
+    <img loading="lazy" width="2300" height="1074" decoding="async" src="./assets/four_components.png" alt="设备产能的四个组成部分" />
+  </picture>
+</figure>
 <h2 id="devices">星河数采无本体设备产能</h2>
-<figure><img loading="lazy" width="3600" height="850" decoding="async" src="./assets/products_headsets_side.jpg" alt="Ego-Air、Ego-Mate-Duo 与 Ego-Mate-Ultra 头环设备侧面外观示例" /><figcaption>图 3｜从左至右为 Ego-Air、Ego-Mate-Duo、Ego-Mate-Ultra，非等比例展示。Ultra 图片做了水平镜像以统一朝向，不能据此判断实际左右结构或传感器位置。</figcaption></figure>
-<figure><img loading="lazy" width="2100" height="960" decoding="async" src="./assets/products_nearfield.jpg" alt="Mate系列腕部近场设备外观示例" /><figcaption>图 4｜Ego-Mate-Wristcam 与 Ego-Mate-Finger。两者的佩戴方式与操作形式不同，应按任务选择。</figcaption></figure>
+<figure>
+  <picture>
+    <source type="image/webp"
+      srcset="./assets/products_headsets_side-480.webp 480w,
+        ./assets/products_headsets_side-960.webp 960w,
+        ./assets/products_headsets_side-1800.webp 1800w"
+      sizes="(max-width: 430px) calc(100vw - 32px), (max-width: 800px) 90vw, calc(min(1180px, calc(100vw - min(10vw, 120px))) - 205px - min(5vw, 72px))">
+    <img loading="lazy" width="3600" height="850" decoding="async" src="./assets/products_headsets_side.jpg" alt="Ego-Air、Ego-Mate-Duo 与 Ego-Mate-Ultra 头环设备侧面外观示例" />
+  </picture>
+  <figcaption>图 3｜从左至右为 Ego-Air、Ego-Mate-Duo、Ego-Mate-Ultra，非等比例展示。Ultra 图片做了水平镜像以统一朝向，不能据此判断实际左右结构或传感器位置。</figcaption>
+</figure>
+<figure>
+  <picture>
+    <source type="image/webp"
+      srcset="./assets/products_nearfield-480.webp 480w,
+        ./assets/products_nearfield-960.webp 960w,
+        ./assets/products_nearfield-1800.webp 1800w"
+      sizes="(max-width: 430px) calc(100vw - 32px), (max-width: 800px) 90vw, calc(min(1180px, calc(100vw - min(10vw, 120px))) - 205px - min(5vw, 72px))">
+    <img loading="lazy" width="2100" height="960" decoding="async" src="./assets/products_nearfield.jpg" alt="Mate系列腕部近场设备外观示例" />
+  </picture>
+  <figcaption>图 4｜Ego-Mate-Wristcam 与 Ego-Mate-Finger。两者的佩戴方式与操作形式不同，应按任务选择。</figcaption>
+</figure>
 <p>我们已支持三款头环和两款腕部观测设备。头环记录场景上下文，腕部设备补充近场手物交互。选型要同时考虑任务覆盖、成像质量和佩戴负担。</p>
 <h3 id="section-2-1-头环观测设备">2.1 头环观测设备</h3>
 <div class="table-scroll wide" role="region" aria-label="数据表格" tabindex="0"><table>
@@ -362,7 +412,13 @@
 </tr>
 </tbody>
 </table></div>
-<figure><img loading="lazy" width="2880" height="972" decoding="async" src="./assets/time_alignment.png" alt="硬同步相机组、IMU 与跨设备相机的时间关系示意" /><figcaption>图 7｜设备内硬同步、IMU 与跨设备软同步。时间间隔和偏移仅为示意，不代表实测同步误差。</figcaption></figure>
+<figure>
+  <picture>
+    <source type="image/webp" srcset="./assets/time_alignment.webp">
+    <img loading="lazy" width="2880" height="972" decoding="async" src="./assets/time_alignment.png" alt="硬同步相机组、IMU 与跨设备相机的时间关系示意" />
+  </picture>
+  <figcaption>图 7｜设备内硬同步、IMU 与跨设备软同步。时间间隔和偏移仅为示意，不代表实测同步误差。</figcaption>
+</figure>
 <p>每路时间戳需明确时钟域、单位、时间原点及曝光时刻语义。软件对齐不改变原始采样时刻，因此交付时保留原始时间与对齐后的关联，并按任务要求检查配对时间差和观测缺口，标记不满足要求的片段。</p>
 <h3 id="section-3-3-出厂标定-投产前验证与数据-设备追溯">3.3 出厂标定、投产前验证与数据—设备追溯</h3>
 <p>我们以设备出厂标定作为处理输入，正式投产前固定标定参数，通过极线校正、视差／深度、特征匹配、全景和定位结果反向验证其适用性，具体方法见第四章。</p>
@@ -430,7 +486,17 @@ def rectify_kb4(left, right, K1, D1, K2, D2, R, t):
     return left_rect, right_rect, P1, P2, Q
 </code></pre>
 <p>Ego-Air 的 SEUCM 需按自身投影模型生成映射，再用 <code>cv2.remap</code> 重采样。下图保留其已有的校正与视差结果，用于展示检查方式，不是上述 KB4 代码的输出。</p>
-<figure><img loading="lazy" width="4800" height="1284" decoding="async" src="./assets/stereo_rectified_guides.png" alt="Ego-Air 校正后的左右图、同高度水平辅助线与原始视差可视化" /><figcaption>图 8｜左、中为校正后的 RGB 双目，辅助线位于相同像素行；右为视差图。检查对象是左右图中同一特征的行坐标，而非物体边缘是否水平。</figcaption></figure>
+<figure>
+  <picture>
+    <source type="image/webp"
+      srcset="./assets/stereo_rectified_guides-480.webp 480w,
+        ./assets/stereo_rectified_guides-960.webp 960w,
+        ./assets/stereo_rectified_guides-1800.webp 1800w"
+      sizes="(max-width: 430px) calc(100vw - 32px), (max-width: 800px) 90vw, calc(min(1180px, calc(100vw - min(10vw, 120px))) - 205px - min(5vw, 72px))">
+    <img loading="lazy" width="4800" height="1284" decoding="async" src="./assets/stereo_rectified_guides.png" alt="Ego-Air 校正后的左右图、同高度水平辅助线与原始视差可视化" />
+  </picture>
+  <figcaption>图 8｜左、中为校正后的 RGB 双目，辅助线位于相同像素行；右为视差图。检查对象是左右图中同一特征的行坐标，而非物体边缘是否水平。</figcaption>
+</figure>
 <p>单帧的 689 对候选匹配中，绝对纵向差的中位数约为 3.8 px，P95 约为 8.4 px。候选点尚未通过几何误差筛选，仍需在多帧上复核。</p>
 <p>在校正后两目焦距与主点相同的水平双目中，视差 <span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mo>=</mo><msub><mi>u</mi><mrow><mi>l</mi><mi>e</mi><mi>f</mi><mi>t</mi></mrow></msub><mo>−</mo><msub><mi>u</mi><mrow><mi>r</mi><mi>i</mi><mi>g</mi><mi>h</mi><mi>t</mi></mrow></msub></mrow><annotation encoding="application/x-tex">d=u_{left}-u_{right}</annotation></semantics></math></span> 可转换为深度：</p>
 <div class="equation"><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi>Z</mi><mo>=</mo><mfrac><mrow><mi>f</mi><mi>B</mi></mrow><mi>d</mi></mfrac><mi mathvariant="normal">.</mi></mrow><annotation encoding="application/x-tex">Z=\frac{fB}{d}.</annotation></semantics></math></span></div>
@@ -442,7 +508,17 @@ def rectify_kb4(left, right, K1, D1, K2, D2, R, t):
 +\frac{\Delta B}{B}
 -\frac{\Delta d}{d}.</annotation></semantics></math></span></div>
 <p>它说明焦距、基线的标定偏差与视差估计偏差如何传递到深度，为从深度结果反向检查标定提供依据。</p>
-<figure><img loading="lazy" width="2560" height="960" decoding="async" src="./assets/stereo_metric_depth.png" alt="Ego-Air 同帧 RGB 与带米制色条的轴向深度" /><figcaption>图 9｜同帧校正 RGB 与双目模型估计的米制深度。色条为 0.5–5.0 m，灰色为非正值或非有限值区域；显示区间不代表设备量程。</figcaption></figure>
+<figure>
+  <picture>
+    <source type="image/webp"
+      srcset="./assets/stereo_metric_depth-480.webp 480w,
+        ./assets/stereo_metric_depth-960.webp 960w,
+        ./assets/stereo_metric_depth-1800.webp 1800w"
+      sizes="(max-width: 430px) calc(100vw - 32px), (max-width: 800px) 90vw, calc(min(1180px, calc(100vw - min(10vw, 120px))) - 205px - min(5vw, 72px))">
+    <img loading="lazy" width="2560" height="960" decoding="async" src="./assets/stereo_metric_depth.png" alt="Ego-Air 同帧 RGB 与带米制色条的轴向深度" />
+  </picture>
+  <figcaption>图 9｜同帧校正 RGB 与双目模型估计的米制深度。色条为 0.5–5.0 m，灰色为非正值或非有限值区域；显示区间不代表设备量程。</figcaption>
+</figure>
 <p>该帧约 97.56% 的像素具有有限的正深度值。检验标定时，可结合极线残差与跨视角重投影检查深度的几何一致性。评估绝对测距精度还需独立参考测量。</p>
 <h3 id="section-4-2-多目拼接-标准化虚拟视图与几何验证">4.2 多目拼接：标准化虚拟视图与几何验证</h3>
 <p>多目拼接将不同朝向的相机图像组织到约定的投影与视野中，形成虚拟全景视图。通过统一投影、朝向和输出规格，可以减少不同设备在相机数量与布局上的差异，为跨设备数据对齐提供更一致的观测表达。</p>
@@ -472,8 +548,28 @@ if status != cv2.Stitcher_OK:
 <p>以下 OpenCV API 用于说明关键几何步骤；展示结果来自既有 VIO 与跨设备定位管线。</p>
 <h4 id="section-4-3-1-特征匹配-建立共同观测">4.3.1 特征匹配：建立共同观测</h4>
 <p>同相机跨帧匹配检查运动中的场景关联，头环—腕部匹配则建立不同视角间的共同观测。通用特征匹配可参考 <a href="https://docs.opencv.org/4.13.0/dc/dc3/tutorial_py_matcher.html"><code>cv2.SIFT_create</code>、<code>cv2.BFMatcher.knnMatch</code> 与 <code>cv2.drawMatches</code></a>。对应点需经过几何筛选，并关注静态背景、像面覆盖与重复纹理。</p>
-<figure><img loading="lazy" width="3200" height="1300" decoding="async" src="./assets/head_cam0_match.png" alt="头环 head cam0 两张图像之间的特征匹配" /><figcaption>图 11｜同一头环相机的跨帧候选匹配，展示连续运动中的共同观测，不是左右目立体匹配。</figcaption></figure>
-<figure><img loading="lazy" width="3200" height="1300" decoding="async" src="./assets/head_cam0_left_wrist_match.png" alt="头环 head cam0 与左 Wristcam 图像之间的特征匹配" /><figcaption>图 12｜头环与左腕的跨设备候选匹配。视角、尺度与遮挡不同，仍可建立共同场景对应；定位还需进一步关联三维地图点。</figcaption></figure>
+<figure>
+  <picture>
+    <source type="image/webp"
+      srcset="./assets/head_cam0_match-480.webp 480w,
+        ./assets/head_cam0_match-960.webp 960w,
+        ./assets/head_cam0_match-1800.webp 1800w"
+      sizes="(max-width: 430px) calc(100vw - 32px), (max-width: 800px) 90vw, calc(min(1180px, calc(100vw - min(10vw, 120px))) - 205px - min(5vw, 72px))">
+    <img loading="lazy" width="3200" height="1300" decoding="async" src="./assets/head_cam0_match.png" alt="头环 head cam0 两张图像之间的特征匹配" />
+  </picture>
+  <figcaption>图 11｜同一头环相机的跨帧候选匹配，展示连续运动中的共同观测，不是左右目立体匹配。</figcaption>
+</figure>
+<figure>
+  <picture>
+    <source type="image/webp"
+      srcset="./assets/head_cam0_left_wrist_match-480.webp 480w,
+        ./assets/head_cam0_left_wrist_match-960.webp 960w,
+        ./assets/head_cam0_left_wrist_match-1800.webp 1800w"
+      sizes="(max-width: 430px) calc(100vw - 32px), (max-width: 800px) 90vw, calc(min(1180px, calc(100vw - min(10vw, 120px))) - 205px - min(5vw, 72px))">
+    <img loading="lazy" width="3200" height="1300" decoding="async" src="./assets/head_cam0_left_wrist_match.png" alt="头环 head cam0 与左 Wristcam 图像之间的特征匹配" />
+  </picture>
+  <figcaption>图 12｜头环与左腕的跨设备候选匹配。视角、尺度与遮挡不同，仍可建立共同场景对应；定位还需进一步关联三维地图点。</figcaption>
+</figure>
 <h4 id="section-4-3-2-地图点回投-检查跨帧几何一致性">4.3.2 地图点回投：检查跨帧几何一致性</h4>
 <p>固定较早关键帧估计的三维地图点，用后续位姿和相机模型重新投影，比较预测位置与实际观测。针孔／Brown 模型可参考 <a href="https://docs.opencv.org/4.13.0/d9/d0c/group__calib3d.html"><code>cv2.projectPoints</code></a>，KB4 模型对应 <a href="https://docs.opencv.org/4.13.0/db/d58/group__calib3d__fisheye.html"><code>cv2.fisheye.projectPoints</code></a>。</p>
 <p>单个地图点的重投影误差为：</p>
@@ -481,11 +577,30 @@ if status != cv2.Stitcher_OK:
 u_k-\pi_C\!\left(R_{C\_M}X_k+t_{C\_M}\right)
 \right\rVert_2.</annotation></semantics></math></span></div>
 <p>其中 <span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>X</mi><mi>k</mi></msub></mrow><annotation encoding="application/x-tex">X_k</annotation></semantics></math></span> 为三维地图点，<span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>u</mi><mi>k</mi></msub></mrow><annotation encoding="application/x-tex">u_k</annotation></semantics></math></span> 为实际像素观测，<span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>R</mi><mrow><mi>C</mi><mi mathvariant="normal">_</mi><mi>M</mi></mrow></msub><mo separator="true">,</mo><msub><mi>t</mi><mrow><mi>C</mi><mi mathvariant="normal">_</mi><mi>M</mi></mrow></msub></mrow><annotation encoding="application/x-tex">R_{C\_M},t_{C\_M}</annotation></semantics></math></span> 将地图坐标变换到相机坐标，<span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>π</mi><mi>C</mi></msub></mrow><annotation encoding="application/x-tex">\pi_C</annotation></semantics></math></span> 包含内参与畸变模型。该误差连接地图、位姿与标定，也是 <a href="https://docs.opencv.org/4.13.0/d5/d1f/calib3d_solvePnP.html">PnP 位姿估计</a>的重要优化依据。</p>
-<figure><img loading="lazy" width="800" height="650" decoding="async" src="./assets/seq_00000112_cam_0.png" alt="头环 head cam0 在关键帧序列号 112 的地图点跨关键帧重投影" /><figcaption>图 13｜绿色圆圈为二维观测，红色叉号为地图点回投；黄／紫线分别表示误差不超过／超过显示阈值 8 px，橙色标记投影无效。8 px 不是验收阈值。</figcaption></figure>
+<figure>
+  <picture>
+    <source type="image/webp"
+      srcset="./assets/seq_00000112_cam_0-480.webp 480w,
+        ./assets/seq_00000112_cam_0-800.webp 800w"
+      sizes="(max-width: 430px) calc(100vw - 32px), (max-width: 800px) 90vw, calc(min(1180px, calc(100vw - min(10vw, 120px))) - 205px - min(5vw, 72px))">
+    <img loading="lazy" width="800" height="650" decoding="async" src="./assets/seq_00000112_cam_0.png" alt="头环 head cam0 在关键帧序列号 112 的地图点跨关键帧重投影" />
+  </picture>
+  <figcaption>图 13｜绿色圆圈为二维观测，红色叉号为地图点回投；黄／紫线分别表示误差不超过／超过显示阈值 8 px，橙色标记投影无效。8 px 不是验收阈值。</figcaption>
+</figure>
 <p>图中关键帧有 49 条有效观测，重投影误差中位数为 1.53 px、P95 为 6.19 px，单位为 800×650 图像上的像素。它检查地图点、位姿与标定的共同一致性；这些量来自同一定位管线，不是独立精度真值。</p>
 <h4 id="section-4-3-3-地图定位-将头环与腕部放入同一空间">4.3.3 地图定位：将头环与腕部放入同一空间</h4>
 <p>将腕部图像特征关联到头环的三维 Landmark，形成 2D–3D 对应，再估计腕部在地图中的位姿。单相机定位可参考 <a href="https://docs.opencv.org/4.13.0/d5/d1f/calib3d_solvePnP.html"><code>cv2.solvePnPRansac</code></a>；KB4 图像可先用 <a href="https://docs.opencv.org/4.13.0/db/d58/group__calib3d__fisheye.html"><code>cv2.fisheye.undistortPoints</code></a> 得到归一化像点，再以单位内参、无畸变求解。PnP 返回地图到相机的变换，求逆后才是相机在地图中的位姿。</p>
-<figure><img loading="lazy" width="2830" height="2004" decoding="async" src="./assets/cross_device_debug_oneframe.png" alt="头环三维地图上左右 Wristcam 各一个选中查询帧的匹配地图点" /><figcaption>图 14｜灰色为头环地图；绿／红表示仅左／右腕选中帧匹配的点，紫色为两帧共享点。左右各选一个高内点数的成功查询，非随机抽样，也不是同一时刻。</figcaption></figure>
+<figure>
+  <picture>
+    <source type="image/webp"
+      srcset="./assets/cross_device_debug_oneframe-480.webp 480w,
+        ./assets/cross_device_debug_oneframe-960.webp 960w,
+        ./assets/cross_device_debug_oneframe-1800.webp 1800w"
+      sizes="(max-width: 430px) calc(100vw - 32px), (max-width: 800px) 90vw, calc(min(1180px, calc(100vw - min(10vw, 120px))) - 205px - min(5vw, 72px))">
+    <img loading="lazy" width="2830" height="2004" decoding="async" src="./assets/cross_device_debug_oneframe.png" alt="头环三维地图上左右 Wristcam 各一个选中查询帧的匹配地图点" />
+  </picture>
+  <figcaption>图 14｜灰色为头环地图；绿／红表示仅左／右腕选中帧匹配的点，紫色为两帧共享点。左右各选一个高内点数的成功查询，非随机抽样，也不是同一时刻。</figcaption>
+</figure>
 <p>将跨设备定位约束与各设备的 VIO 里程计共同优化，可得到统一地图中的头环和双腕轨迹。在共同时间 <span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>t</mi></mrow><annotation encoding="application/x-tex">t</annotation></semantics></math></span> 下，腕部相对头环的位姿为：</p>
 <div class="equation"><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><msub><mi>T</mi><mrow><mi>H</mi><mi mathvariant="normal">_</mi><mi>R</mi></mrow></msub><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>=</mo><msub><mi>T</mi><mrow><mi>M</mi><mi mathvariant="normal">_</mi><mi>H</mi></mrow></msub><mo stretchy="false">(</mo><mi>t</mi><msup><mo stretchy="false">)</mo><mrow><mo>−</mo><mn>1</mn></mrow></msup><mtext> </mtext><msub><mi>T</mi><mrow><mi>M</mi><mi mathvariant="normal">_</mi><mi>R</mi></mrow></msub><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mi mathvariant="normal">.</mi></mrow><annotation encoding="application/x-tex">T_{H\_R}(t)=T_{M\_H}(t)^{-1}\,T_{M\_R}(t).</annotation></semantics></math></span></div>
 <p>其中 <span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>M</mi></mrow><annotation encoding="application/x-tex">M</annotation></semantics></math></span> 为地图、<span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>H</mi></mrow><annotation encoding="application/x-tex">H</annotation></semantics></math></span> 为头环、<span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>R</mi></mrow><annotation encoding="application/x-tex">R</annotation></semantics></math></span> 为腕部设备坐标系；相机位姿需先通过设备内外参转换到相应设备坐标系。</p>
@@ -554,7 +669,13 @@ K_V &amp;\approx \begin{bmatrix} 268.092 &amp; 0 &amp; 319.5 \\ 0 &amp; 342.041 
 \end{aligned}</annotation></semantics></math></span></div>
 <p>本配置允许 <code>fx≠fy</code>。若要求方形像素（<code>fx=fy</code>），垂直 FOV 由水平 FOV 和宽高比决定，不能再独立指定为 70°。<code>resize</code> 只改变尺寸；投影与朝向转换需要同时生成图像和对应内参。</p>
 <h3 id="section-5-2-统一投影与朝向-保留光心和真实基线">5.2 统一投影与朝向，保留光心和真实基线</h3>
-<figure><img loading="lazy" width="3840" height="2440" decoding="async" src="./assets/virtual_stereo_geometry.png" alt="虚拟双目转换前后的光轴、投影与真实基线关系" /><figcaption>图 16｜左右虚拟相机共用投影与朝向，保留原光心及基线 B。视锥仅作几何示意，不表示实测 FOV；图片取自已有原理文章。</figcaption></figure>
+<figure>
+  <picture>
+    <source type="image/webp" srcset="./assets/virtual_stereo_geometry.webp">
+    <img loading="lazy" width="3840" height="2440" decoding="async" src="./assets/virtual_stereo_geometry.png" alt="虚拟双目转换前后的光轴、投影与真实基线关系" />
+  </picture>
+  <figcaption>图 16｜左右虚拟相机共用投影与朝向，保留原光心及基线 B。视锥仅作几何示意，不表示实测 FOV；图片取自已有原理文章。</figcaption>
+</figure>
 <p>记物理左、右相机为 1、2，虚拟左、右为 V1、V2。沿用 <code>T_A_B</code> 将 B 系变换到 A 系的约定，<code>t_1_2</code> 表示右光心在物理左坐标系中的位置。</p>
 <p>以真实基线为虚拟 X 轴，参考左相机前向确定其余两轴，再将左右光轴旋转到同一朝向：</p>
 <div class="equation"><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mtable rowspacing="0.25em" columnalign="right left" columnspacing="0em"><mtr><mtd><mstyle scriptlevel="0" displaystyle="true"><mi>B</mi></mstyle></mtd><mtd><mstyle scriptlevel="0" displaystyle="true"><mrow><mrow></mrow><mo>=</mo><mo stretchy="false">∥</mo><msub><mi>t</mi><mrow><mn>1</mn><mi mathvariant="normal">_</mi><mn>2</mn></mrow></msub><mo stretchy="false">∥</mo></mrow></mstyle></mtd></mtr><mtr><mtd><mstyle scriptlevel="0" displaystyle="true"><mrow><msub><mi>R</mi><mrow><mi>V</mi><mn>1</mn><mi mathvariant="normal">_</mi><mn>1</mn></mrow></msub><mo>⋅</mo><msub><mi>t</mi><mrow><mn>1</mn><mi mathvariant="normal">_</mi><mn>2</mn></mrow></msub></mrow></mstyle></mtd><mtd><mstyle scriptlevel="0" displaystyle="true"><mrow><mrow></mrow><mo>=</mo><mo stretchy="false">[</mo><mi>B</mi><mo separator="true">,</mo><mtext> </mtext><mn>0</mn><mo separator="true">,</mo><mtext> </mtext><mn>0</mn><msup><mo stretchy="false">]</mo><mi mathvariant="normal">⊤</mi></msup></mrow></mstyle></mtd></mtr><mtr><mtd><mstyle scriptlevel="0" displaystyle="true"><msub><mi>R</mi><mrow><mi>V</mi><mn>2</mn><mi mathvariant="normal">_</mi><mn>2</mn></mrow></msub></mstyle></mtd><mtd><mstyle scriptlevel="0" displaystyle="true"><mrow><mrow></mrow><mo>=</mo><msub><mi>R</mi><mrow><mi>V</mi><mn>1</mn><mi mathvariant="normal">_</mi><mn>1</mn></mrow></msub><mo>⋅</mo><msub><mi>R</mi><mrow><mn>1</mn><mi mathvariant="normal">_</mi><mn>2</mn></mrow></msub></mrow></mstyle></mtd></mtr></mtable><annotation encoding="application/x-tex">\begin{aligned}
@@ -582,7 +703,17 @@ p_i &amp;= \pi_i(r_i)
 <h3 id="section-5-3-真实输出">5.3 真实输出</h3>
 <h4 id="section-5-3-1-ego-air-标准视图与有效区域">5.3.1 Ego-Air：标准视图与有效区域</h4>
 <p>本例来自 Ego-Air 的 <code>episode_20260720_150841</code>，与第四章样例不同。前期对比中，SEUCM 在当前设备数据上的去畸变效果优于 PDCM，因此按 SEUCM 的成套标定生成虚拟双目，同步更新图像、旋转、基线和有效区域。</p>
-<figure><img loading="lazy" width="2250" height="1200" decoding="async" src="./assets/virtual_stereo_observations.png" alt="Ego-Air 原始 RGB 双目、虚拟针孔双目与几何采样 Mask" /><figcaption>图 17｜上方为原始 1600×1200 RGB 双目，下方为同光心映射后的 640×480 虚拟双目；原图仅在排版时缩放。右侧为参数与两路 Mask 的同坐标交集。左右几何采样有效率均为 100%，不代表深度全部可靠。</figcaption></figure>
+<figure>
+  <picture>
+    <source type="image/webp"
+      srcset="./assets/virtual_stereo_observations-480.webp 480w,
+        ./assets/virtual_stereo_observations-960.webp 960w,
+        ./assets/virtual_stereo_observations-1800.webp 1800w"
+      sizes="(max-width: 430px) calc(100vw - 32px), (max-width: 800px) 90vw, calc(min(1180px, calc(100vw - min(10vw, 120px))) - 205px - min(5vw, 72px))">
+    <img loading="lazy" width="2250" height="1200" decoding="async" src="./assets/virtual_stereo_observations.png" alt="Ego-Air 原始 RGB 双目、虚拟针孔双目与几何采样 Mask" />
+  </picture>
+  <figcaption>图 17｜上方为原始 1600×1200 RGB 双目，下方为同光心映射后的 640×480 虚拟双目；原图仅在排版时缩放。右侧为参数与两路 Mask 的同坐标交集。左右几何采样有效率均为 100%，不代表深度全部可靠。</figcaption>
+</figure>
 <p>Mask 只检查源采样坐标有限且距图像边界至少一像素，不评估纹理、模糊、遮挡、镜头有效成像圈或匹配置信度，也不等同于深度有效区域。</p>
 <p><code>valid_1 ∧ valid_2</code> 是同坐标交集；实际匹配需分别检查 <code>(u_left,v)</code> 与 <code>(u_right,v)</code>。交集全白不代表任意深度、任意目标都具备无遮挡的双目观测。</p>
 <p>扩大虚拟 FOV 可能增加边缘拉伸和无源区域，缩小则会丢失周边覆盖。输出分辨率提高也不增加光学细节，应按任务平衡覆盖、采样密度与有效区域。</p>
@@ -616,7 +747,17 @@ p_i &amp;= \pi_i(r_i)
 </tbody>
 </table></div>
 <p>两款设备按各自物理模型接入，共用相同的虚拟针孔定义。结果中四个 <code>K</code> 矩阵一致，均输出 640×480、水平 100°／垂直 70°；各自的深度输入图也与保存的虚拟图逐像素一致。这是派生结果关联的核对，不要求两款设备的像素内容相同。</p>
-<figure><img loading="lazy" width="3000" height="1200" decoding="async" src="./assets/virtual_stereo_cross_model.png" alt="Ego-Air 与 unitree_gd1 的虚拟双目、视差及米制深度对照" /><figcaption>图 18｜上排 Ego-Air，下排 <code>unitree_gd1</code>；依次为虚拟左图、右图、视差和米制深度，均读取已有结果。深度统一显示为 0.25–5.5 m，灰色为非正值或非有限值，色条不表示量程。视差保留原配色，不能跨设备按颜色比较数值。</figcaption></figure>
+<figure>
+  <picture>
+    <source type="image/webp"
+      srcset="./assets/virtual_stereo_cross_model-480.webp 480w,
+        ./assets/virtual_stereo_cross_model-960.webp 960w,
+        ./assets/virtual_stereo_cross_model-1800.webp 1800w"
+      sizes="(max-width: 430px) calc(100vw - 32px), (max-width: 800px) 90vw, calc(min(1180px, calc(100vw - min(10vw, 120px))) - 205px - min(5vw, 72px))">
+    <img loading="lazy" width="3000" height="1200" decoding="async" src="./assets/virtual_stereo_cross_model.png" alt="Ego-Air 与 unitree_gd1 的虚拟双目、视差及米制深度对照" />
+  </picture>
+  <figcaption>图 18｜上排 Ego-Air，下排 <code>unitree_gd1</code>；依次为虚拟左图、右图、视差和米制深度，均读取已有结果。深度统一显示为 0.25–5.5 m，灰色为非正值或非有限值，色条不表示量程。视差保留原配色，不能跨设备按颜色比较数值。</figcaption>
+</figure>
 <p>下游可复用图像尺寸、<code>K_V</code> 和米制深度接口，匹配到深度的转换仍须使用各自基线。因此，两款设备的右投影矩阵平移项与 <code>Q</code> 不能直接复用，同一深度也可能对应不同视差。</p>
 <p>两组图像并非同位姿、同曝光条件下的同步采集，不能用物体大小、颜色或估计深度是否相等评价虚拟化质量。展示直接读取已有 <code>depth_meter.npy</code>，未从视差色图反算、重跑推理或引入独立测距真值；模型版本、数值视差和绝对误差仍需关联评估。</p>
 <p>三种处理的作用区别如下：</p>

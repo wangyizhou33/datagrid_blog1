@@ -72,6 +72,7 @@ article h4 { margin: 30px 0 12px; font-size: 1.12rem; }
 article a { text-underline-offset: .19em; text-decoration-color: #a6a7ad; }
 article a:hover { text-decoration-color: currentColor; }
 figure { margin: 28px 0 30px; }
+figure > picture { display: block; }
 article figure img { display: block; max-width: 100%; height: auto; margin: auto; border-radius: 14px; }
 figcaption { margin: 10px 0 0; font-size: .87rem; line-height: 1.55; color: var(--muted); }
 .table-scroll { overflow-x: auto; margin: 22px 0 28px; border: 1px solid var(--line); border-radius: 12px; }
