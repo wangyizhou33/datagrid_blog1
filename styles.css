@@ -46,8 +46,9 @@ a { color: inherit; }
 h1 { margin: 0; font-size: clamp(2.55rem, 7.3vw, 5.8rem); font-weight: 770;
   line-height: 1.1; letter-spacing: -.055em; }
 h1 span { display: block; }
-.hero-deck { margin: 22px 0 clamp(26px, 4.6vw, 52px); font-size: clamp(1.06rem, 2vw, 1.4rem);
+.hero-deck { margin: 22px 0 0; font-size: clamp(1.06rem, 2vw, 1.4rem);
   letter-spacing: .045em; color: #424348; font-weight: 560; }
+.hero-byline { margin: 10px 0 clamp(26px, 4.6vw, 52px); color: var(--muted); }
 .hero figure { margin: 0; }
 .hero figure img { border-radius: clamp(12px, 2vw, 24px); width: 100%; height: auto; display: block; }
 .hero figcaption { margin: 11px 0 0; }
