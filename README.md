@@ -10,7 +10,7 @@
 python3 -m http.server 8000
 ```
 
-访问 `http://127.0.0.1:8000/`。在文章的「Rig Visualization」和「地图定位」两节可以直接操作内嵌的 Demo。交互场景需要支持 WebGL 的浏览器。
+访问 `http://127.0.0.1:8000/`。在文章的「3.1 Rig Visualization」和「4.3 连续运动」开头可以直接操作内嵌的 Demo。交互场景需要支持 WebGL 的浏览器。
 
 ## 部署到 GitHub Pages
 

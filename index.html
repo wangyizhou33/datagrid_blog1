@@ -160,7 +160,7 @@
 <td>灰度各 640×480、30 fps；RGB 各 1600×1200、60 fps</td>
 <td>全局快门</td>
 <td>鱼眼对角 ≥160°；RGB H159°／V95°</td>
-<td>相机组硬同步，见 3.2</td>
+<td>相机组硬同步，见 3.3</td>
 <td>IMU 500 Hz；USB 3.0、Wi-Fi 6；最大功耗 4 W</td>
 <td>更多灰度相机辅助空间定位；板载算力充足，可在线运行定位与手部出画检测</td>
 </tr>
@@ -169,7 +169,7 @@
 <td>1600×1200、30 fps</td>
 <td>全局快门</td>
 <td>单路 H165°／V130°</td>
-<td>硬同步，见 3.2</td>
+<td>硬同步，见 3.3</td>
 <td>IMU 400／1000 Hz；约 250 g、&lt;2 W；USB 2.0、TF 卡</td>
 <td>三款头环中单价最低，性价比高</td>
 </tr>
@@ -178,7 +178,7 @@
 <td>1600×1200、30／60 fps</td>
 <td>全局快门</td>
 <td>此模式单路 H165°／V130°；标称拼接 H281°</td>
-<td>四目硬同步，见 3.2</td>
+<td>四目硬同步，见 3.3</td>
 <td>IMU 400／800／1000 Hz；相机 &lt;420 g、&lt;6 W；USB 3.0、主动散热</td>
 <td>RGB 组合视场大，与腕部图像的视场重叠范围更大，有利于腕部定位</td>
 </tr>
@@ -203,7 +203,7 @@
 <td>1600×1200、30／60 fps</td>
 <td>全局快门</td>
 <td>H165°／V130°</td>
-<td>单目；跨设备软同步，见 3.2</td>
+<td>单目；跨设备软同步，见 3.3</td>
 <td>IMU 400／1000 Hz；单设备约 75 g、&lt;2 W；USB 2.0、TF 卡</td>
 <td>轻量腕戴，补充自然徒手操作的近场观测</td>
 </tr>
@@ -212,7 +212,7 @@
 <td>RGB 1600×1200；Mono 各 1280×960；30／60 fps</td>
 <td>全局快门</td>
 <td>RGB H165°／V128°；Mono H137°／V100°</td>
-<td>设备内相机硬同步，见 3.2</td>
+<td>设备内相机硬同步，见 3.3</td>
 <td>IMU 400／800／1600 Hz；单设备约 320 g、典型 &lt;3 W；TF 卡</td>
 <td>手持／夹持任务中的彩色与双目几何观测</td>
 </tr>
@@ -225,8 +225,23 @@
 <h2 id="calibration">03 建立可信的空间与时间坐标</h2>
 <p>头环看见水杯、腕部看见抓握位置，这两张图还不能直接合在一起用。要先回答几个问题：每个像素对应哪一条空间射线，两个画面记录的是不是同一次接触，相机位姿是相对头环、腕部还是共同地图表达的。投影模型、坐标变换和时间语义都定义清楚之后，多路视频才能用于计算。</p>
 <p>本章使用四组现有样例：Ego-Air、Ego-Mate-Duo＋双侧 Wristcam、Ego-Mate-Duo＋双侧 Finger，以及 Ego-Mate-Ultra。文中分开写三类内容：标定文件里已有的参数，由这些参数算出的结果，以及投产前还要验证的条件。有标定文件，不代表已经通过精度验收。</p>
-<h3 id="section-3-1-相机模型-内参与外参">3.1 相机模型、内参与外参</h3>
-<h4 id="section-3-1-1-常用模型及其选用依据">3.1.1 常用模型及其选用依据</h4>
+<h3 id="section-3-1-rig-visualization"><span id="section-3-1-4-rig-visualization"></span>3.1 Rig Visualization</h3>
+<figure class="demo" id="rig-demo">
+  <div class="demo-bar">
+    <span>设备 Rig Viewer</span>
+    <button class="demo-fullscreen" type="button" aria-label="全屏" title="全屏" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+        <path class="expand-icon" d="M4 9V4h5m6 0h5v5m0 6v5h-5m-6 0H4v-5"/>
+        <path class="shrink-icon" d="M9 4v5H4m16 0h-5V4m0 16v-5h5m-16 0h5v5"/>
+      </svg>
+    </button>
+  </div>
+  <iframe src="./demos/rig-viewer/index.html" title="设备 Rig Viewer" loading="lazy"></iframe>
+  <figcaption>选择设备组合，拖动查看相机位置与视场。部件内相机几何取自标定，人体与头腕相对姿态为示意。</figcaption>
+</figure>
+<p>通过统一的 Rig Viewer 查看各组设备的相机位置、朝向、双目基线与标定视场，并结合人体示意对照头环与腕部的观测覆盖。</p>
+<h3 id="section-3-2-相机模型-内参与外参"><span id="section-3-1-相机模型-内参与外参"></span>3.2 相机模型、内参与外参</h3>
+<h4 id="section-3-2-1-常用模型及其选用依据"><span id="section-3-1-1-常用模型及其选用依据"></span>3.2.1 常用模型及其选用依据</h4>
 <p>工程上常把非线性成像统称为“畸变”，其实它包括两类：针孔投影之后的径向／切向修正，以及直接改变投影几何的鱼眼模型。一个相机模型要同时定义三维点到像素的投影 <code>π()</code> 和像素到单位视线的反投影 <code>π⁻¹()</code>；FOV 计算、极线校正和 VIO／SLAM 都要用到反投影。</p>
 <p>设相机坐标中的三维点为 <span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>P</mi><mi>C</mi></msub><mo>=</mo><mo stretchy="false">(</mo><mi>X</mi><mo separator="true">,</mo><mi>Y</mi><mo separator="true">,</mo><mi>Z</mi><msup><mo stretchy="false">)</mo><mi mathvariant="normal">⊤</mi></msup></mrow><annotation encoding="application/x-tex">P_C=(X,Y,Z)^\top</annotation></semantics></math></span>，各模型先得到像面坐标 <span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false">(</mo><msub><mi>x</mi><mi>m</mi></msub><mo separator="true">,</mo><msub><mi>y</mi><mi>m</mi></msub><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">(x_m,y_m)</annotation></semantics></math></span>，再转换为像素：</p>
 <div class="equation"><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi>u</mi><mo>=</mo><msub><mi>f</mi><mi>x</mi></msub><msub><mi>x</mi><mi>m</mi></msub><mo>+</mo><msub><mi>c</mi><mi>x</mi></msub><mo separator="true">,</mo><mspace width="2em"/><mi>v</mi><mo>=</mo><msub><mi>f</mi><mi>y</mi></msub><msub><mi>y</mi><mi>m</mi></msub><mo>+</mo><msub><mi>c</mi><mi>y</mi></msub><mi mathvariant="normal">.</mi></mrow><annotation encoding="application/x-tex">u=f_x x_m+c_x,\qquad v=f_y y_m+c_y.</annotation></semantics></math></span></div>
@@ -286,7 +301,7 @@
 </tr>
 </tbody>
 </table></div>
-<h4 id="section-3-1-2-样例中实际使用的模型">3.1.2 样例中实际使用的模型</h4>
+<h4 id="section-3-2-2-样例中实际使用的模型"><span id="section-3-1-2-样例中实际使用的模型"></span>3.2.2 样例中实际使用的模型</h4>
 <div class="table-scroll" role="region" aria-label="数据表格" tabindex="0"><table>
 <thead>
 <tr>
@@ -363,28 +378,13 @@
 </tr>
 </tbody>
 </table></div>
-<h4 id="section-3-1-3-坐标与变换约定">3.1.3 坐标与变换约定</h4>
+<h4 id="section-3-2-3-坐标与变换约定"><span id="section-3-1-3-坐标与变换约定"></span>3.2.3 坐标与变换约定</h4>
 <p>下文统一用 <code>T_A_B</code> 表示从 B 坐标系到 A 坐标系的变换，长度单位为米：</p>
 <div class="equation"><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><msub><mi>p</mi><mi>A</mi></msub><mo>=</mo><msub><mi>R</mi><mrow><mi>A</mi><mi mathvariant="normal">_</mi><mi>B</mi></mrow></msub><mtext> </mtext><msub><mi>p</mi><mi>B</mi></msub><mo>+</mo><msub><mi>t</mi><mrow><mi>A</mi><mi mathvariant="normal">_</mi><mi>B</mi></mrow></msub><mi mathvariant="normal">.</mi></mrow><annotation encoding="application/x-tex">p_A = R_{A\_B}\,p_B + t_{A\_B}.</annotation></semantics></math></span></div>
 <p>相机采用右手系：X 向右、Y 向下、Z 向前；IMU 坐标轴以标定文件为准。头环与腕部独立运动，两者的相对位姿随时间变化。</p>
-<h4 id="section-3-1-4-rig-visualization">3.1.4 Rig Visualization</h4>
-<p>通过统一的 Rig Viewer 查看各组设备的相机位置、朝向、双目基线与标定视场，并结合人体示意对照头环与腕部的观测覆盖。</p>
-<figure class="demo" id="rig-demo">
-  <div class="demo-bar">
-    <span>设备 Rig Viewer</span>
-    <button class="demo-fullscreen" type="button" aria-label="全屏" title="全屏" hidden>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-        <path class="expand-icon" d="M4 9V4h5m6 0h5v5m0 6v5h-5m-6 0H4v-5"/>
-        <path class="shrink-icon" d="M9 4v5H4m16 0h-5V4m0 16v-5h5m-16 0h5v5"/>
-      </svg>
-    </button>
-  </div>
-  <iframe src="./demos/rig-viewer/index.html" title="设备 Rig Viewer" loading="lazy"></iframe>
-  <figcaption>选择设备组合，拖动查看相机位置与视场。部件内相机几何取自标定，人体与头腕相对姿态为示意。</figcaption>
-</figure>
-<h4 id="section-3-1-5-布局与观测覆盖">3.1.5 布局与观测覆盖</h4>
+<h4 id="section-3-2-4-布局与观测覆盖"><span id="section-3-1-5-布局与观测覆盖"></span>3.2.4 布局与观测覆盖</h4>
 <p>双目头环提供前方重叠视野，四目头环通过侧向相机扩展周边覆盖；腕部设备随手独立运动，其相对头环的位姿需要后续估计。视场锥表示标定模型的覆盖，实际有效观测还受遮挡和成像区域限制。</p>
-<h3 id="section-3-2-时间同步与曝光时序">3.2 时间同步与曝光时序</h3>
+<h3 id="section-3-3-时间同步与曝光时序"><span id="section-3-2-时间同步与曝光时序"></span>3.3 时间同步与曝光时序</h3>
 <p>头部与手部持续运动，多路观测需要在时间上对齐，才能描述同一次操作。已支持设备采用以下同步方式：</p>
 <div class="table-scroll" role="region" aria-label="数据表格" tabindex="0"><table>
 <thead>
@@ -420,7 +420,7 @@
   <figcaption>图 7｜设备内硬同步、IMU 与跨设备软同步。时间间隔和偏移仅为示意，不代表实测同步误差。</figcaption>
 </figure>
 <p>每路时间戳需明确时钟域、单位、时间原点及曝光时刻语义。软件对齐不改变原始采样时刻，因此交付时保留原始时间与对齐后的关联，并按任务要求检查配对时间差和观测缺口，标记不满足要求的片段。</p>
-<h3 id="section-3-3-出厂标定-投产前验证与数据-设备追溯">3.3 出厂标定、投产前验证与数据—设备追溯</h3>
+<h3 id="section-3-4-出厂标定-投产前验证与数据-设备追溯"><span id="section-3-3-出厂标定-投产前验证与数据-设备追溯"></span>3.4 出厂标定、投产前验证与数据—设备追溯</h3>
 <p>我们以设备出厂标定作为处理输入，正式投产前固定标定参数，通过极线校正、视差／深度、特征匹配、全景和定位结果反向验证其适用性，具体方法见第四章。</p>
 <p>标定参数随采集数据一起落盘，与会话、设备、传感器流和采集模式关联。后续处理使用该次采集的标定快照，并记录时间映射、处理配置与版本，形成数据到设备、传感器参数及派生结果的血缘：</p>
 <pre><code class="language-text">原始帧／IMU 采样
@@ -540,6 +540,19 @@ if status != cv2.Stitcher_OK:
 <p>这是通用 API 示例。视频采用针对固定 rig 的处理流程：KB4 去畸变、SIFT 特征匹配、几何筛选与固定单应对齐，再投影到柱面并融合。当前拟合记录中，特征恢复的相对旋转与标定外参分别相差约 0.33°、0.36°，可作为旋转一致性的参考。</p>
 <p>多相机光心不同，近场手物仍可能产生视差和遮挡；虚拟全景不能完全等同于单一光心的相机。因此，验证应保留融合前的匹配与残差，结合近场目标和动态接缝检查，而不能只看最终全景是否自然。</p>
 <h3 id="section-4-3-连续运动-从共同观测到统一空间定位">4.3 连续运动：从共同观测到统一空间定位</h3>
+<figure class="demo" id="pose-demo">
+  <div class="demo-bar">
+    <span>跨设备定位回放</span>
+    <button class="demo-fullscreen" type="button" aria-label="全屏" title="全屏" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+        <path class="expand-icon" d="M4 9V4h5m6 0h5v5m0 6v5h-5m-6 0H4v-5"/>
+        <path class="shrink-icon" d="M9 4v5H4m16 0h-5V4m0 16v-5h5m-16 0h5v5"/>
+      </svg>
+    </button>
+  </div>
+  <iframe src="./demos/cross-device/index.html" title="跨设备定位回放" loading="lazy"></iframe>
+  <figcaption>主视图显示同一地图中的头环、双腕估计轨迹与 SLAM 地图点。底部四路相机画面随时间轴更新。</figcaption>
+</figure>
 <p>连续定位将头环与腕部的运动放入同一空间，为场景理解和操作分析提供位姿信息，也检验相机模型、时空标定与跨设备观测能否共同工作。本例使用 Duo 与双侧 Wristcam，处理链路为：</p>
 <pre><code class="language-text">各设备图像＋IMU → 单设备 VIO
 头环三维地图＋腕部 2D–3D 对应 → 跨设备地图定位
@@ -604,19 +617,6 @@ u_k-\pi_C\!\left(R_{C\_M}X_k+t_{C\_M}\right)
 <p>将跨设备定位约束与各设备的 VIO 里程计共同优化，可得到统一地图中的头环和双腕轨迹。在共同时间 <span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>t</mi></mrow><annotation encoding="application/x-tex">t</annotation></semantics></math></span> 下，腕部相对头环的位姿为：</p>
 <div class="equation"><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><msub><mi>T</mi><mrow><mi>H</mi><mi mathvariant="normal">_</mi><mi>R</mi></mrow></msub><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>=</mo><msub><mi>T</mi><mrow><mi>M</mi><mi mathvariant="normal">_</mi><mi>H</mi></mrow></msub><mo stretchy="false">(</mo><mi>t</mi><msup><mo stretchy="false">)</mo><mrow><mo>−</mo><mn>1</mn></mrow></msup><mtext> </mtext><msub><mi>T</mi><mrow><mi>M</mi><mi mathvariant="normal">_</mi><mi>R</mi></mrow></msub><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mi mathvariant="normal">.</mi></mrow><annotation encoding="application/x-tex">T_{H\_R}(t)=T_{M\_H}(t)^{-1}\,T_{M\_R}(t).</annotation></semantics></math></span></div>
 <p>其中 <span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>M</mi></mrow><annotation encoding="application/x-tex">M</annotation></semantics></math></span> 为地图、<span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>H</mi></mrow><annotation encoding="application/x-tex">H</annotation></semantics></math></span> 为头环、<span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>R</mi></mrow><annotation encoding="application/x-tex">R</annotation></semantics></math></span> 为腕部设备坐标系；相机位姿需先通过设备内外参转换到相应设备坐标系。</p>
-<figure class="demo" id="pose-demo">
-  <div class="demo-bar">
-    <span>跨设备定位回放</span>
-    <button class="demo-fullscreen" type="button" aria-label="全屏" title="全屏" hidden>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-        <path class="expand-icon" d="M4 9V4h5m6 0h5v5m0 6v5h-5m-6 0H4v-5"/>
-        <path class="shrink-icon" d="M9 4v5H4m16 0h-5V4m0 16v-5h5m-16 0h5v5"/>
-      </svg>
-    </button>
-  </div>
-  <iframe src="./demos/cross-device/index.html" title="跨设备定位回放" loading="lazy"></iframe>
-  <figcaption>主视图显示同一地图中的头环、双腕估计轨迹与 SLAM 地图点。底部四路相机画面随时间轴更新。</figcaption>
-</figure>
 <h2 id="virtual-camera">第五章：Virtual Camera 与标准化视觉观测接口</h2>
 <p>虚拟相机为不同分辨率、镜头模型和像素几何提供统一的观测接口，让下游按同一规范解释像素视线。</p>
 <p>同一虚拟像素在各自约定的坐标系中对应同一方向；设备的世界位姿、光心、曝光、噪声、颜色和可见范围仍各不相同。</p>
